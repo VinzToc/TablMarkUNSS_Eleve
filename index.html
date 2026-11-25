@@ -198,9 +198,10 @@ const NIVEAUX = ['AS / Établissement', 'District', 'Départemental', 'Académiq
 const CATS = ['Benjamins', 'Minimes', 'Cadets', 'Juniors', 'Lycées', 'Collèges', 'Sport partagé'];
 const SEXES = ['Filles', 'Garçons', 'Mixte'];
 const NIV_JO = ['', 'Établissement', 'District', 'Départemental', 'Académique', 'National', 'International'];
+const EXTRA_ROLES = [['coach1', 'Jeune coach 1'], ['coach2', 'Jeune coach 2'], ['rep1', 'Jeune reporter 1'], ['rep2', 'Jeune reporter 2']];
 const ROLES = {
-  co: [['arb1', 'Arbitre 1'], ['arb2', 'Arbitre 2'], ['sec', 'Secrétaire / marqueur'], ['chr', 'Chronométreur'], ['resp', 'Responsable de table']],
-  du: [['arb1', 'Juge-arbitre'], ['arb2', 'Arbitre'], ['sec', 'Marqueur'], ['resp', 'Responsable de table']]
+  co: [['arb1', 'Arbitre 1'], ['arb2', 'Arbitre 2'], ['sec', 'Secrétaire / marqueur'], ['chr', 'Chronométreur'], ['resp', 'Responsable de table'], ...EXTRA_ROLES],
+  du: [['arb1', 'Juge-arbitre'], ['arb2', 'Arbitre'], ['sec', 'Marqueur'], ['resp', 'Responsable de table'], ...EXTRA_ROLES]
 };
 
 /* acts : [clé, libellé, points, couleur] — couleur : y jaune, o orange, r rouge, f faute, s remplacement */
