@@ -116,9 +116,10 @@ table.list tr.click{cursor:pointer}table.list tr.click:hover td{background:rgba(
 .pr input{min-height:40px;padding:6px 8px}
 .ck{display:flex;align-items:center;gap:3px;font-size:13px;font-weight:600}.ck input{width:20px;min-height:20px}
 .pr button{padding:0;min-height:40px}
-.coachz{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}.coachz .off{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,.9fr);margin:0}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.coachz{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}.coachz .off{grid-template-columns:repeat(3,minmax(0,1fr));margin:0}.coachz .o-nom{grid-column:span 2}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .party{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1.2fr) 44px;gap:6px;margin-bottom:6px}
-.off{display:grid;grid-template-columns:160px minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:6px;align-items:center;margin-bottom:6px}
+.off{display:grid;grid-template-columns:150px minmax(0,1.5fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,.9fr) minmax(0,1fr);gap:6px;align-items:center;margin-bottom:8px}
+@media(max-width:1100px){.off{grid-template-columns:repeat(3,minmax(0,1fr));padding-bottom:10px;border-bottom:1px solid var(--line)}.off .ol{grid-column:1/-1;font-weight:700}.off .o-nom{grid-column:span 2}.coachz .off{border:0;padding:0}}
 .board{background:var(--board);border:1px solid var(--line);color:#fff;border-radius:22px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;overflow:hidden;box-shadow:0 10px 30px rgb(0 0 0/.25)}
 .tm{padding:14px 16px;display:flex;flex-direction:column;gap:4px}
 .tmA{background:linear-gradient(160deg,#ffa21f,#d94a00)}.tmB{background:linear-gradient(200deg,#2f9bff,#0a3fae);text-align:right;align-items:flex-end}
@@ -176,8 +177,8 @@ table.list tr.click{cursor:pointer}table.list tr.click:hover td{background:rgba(
 .mini{background:var(--board);border:1px solid var(--line);box-shadow:0 20px 50px rgba(0,0,0,.4);color:#fff;border-radius:22px;display:grid;grid-template-columns:1fr auto 1fr;overflow:hidden}
 .mini div{padding:16px;font:700 64px/1 var(--cond)}.mini div:first-child{background:var(--gA)}.mini div:last-child{background:var(--gB);text-align:right}.mini .c{font-size:30px;align-self:center;color:#7ef0a6}
 .storage{background:var(--o);color:#111;padding:8px 12px;border-radius:10px;font-weight:600;margin-bottom:12px}
-@media(max-width:820px){.pr{grid-template-columns:52px minmax(0,1fr) minmax(0,1fr) 44px;grid-auto-flow:row dense;padding-bottom:6px;border-bottom:1px solid var(--line)}.pr .n{grid-area:1/1}.pr button{grid-area:1/4}.pr .lic{grid-column:1/3;grid-row:2}.off{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.off>span{grid-column:1/-1;font-weight:600}}
-@media(max-width:600px){.coachz .off{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.coachz .off input:first-of-type{grid-column:1/-1}.board{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.clk{grid-column:1/-1;order:-1;min-width:0}.tm{padding:10px}
+@media(max-width:820px){.pr{grid-template-columns:52px minmax(0,1fr) minmax(0,1fr) 44px;grid-auto-flow:row dense;padding-bottom:6px;border-bottom:1px solid var(--line)}.pr .n{grid-area:1/1}.pr button{grid-area:1/4}.pr .lic{grid-column:1/3;grid-row:2}}
+@media(max-width:600px){.off,.coachz .off{grid-template-columns:repeat(2,minmax(0,1fr))}.off .o-nom,.off .o-etab,.off .o-niv,.coachz .o-nom{grid-column:1/-1}.board{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.clk{grid-column:1/-1;order:-1;min-width:0}.tm{padding:10px}
 .pads{grid-template-columns:1fr}.hero{grid-template-columns:1fr}.party{grid-template-columns:minmax(0,1fr) 44px}.party input:nth-child(1){grid-column:1/-1}.party input{grid-column:1}.party button{grid-row:2;grid-column:2}
 .log li{grid-template-columns:70px 26px minmax(0,1fr) 36px}.log .ls{display:none}.sigs{grid-template-columns:1fr}.res .nm{font-size:17px}}
 </style>
@@ -201,7 +202,7 @@ const SEXES = ['Filles', 'Garçons', 'Mixte'];
 const NIV_JO = ['', 'Établissement', 'District', 'Départemental', 'Académique', 'National', 'International'];
 const EXTRA_ROLES = [['coach1', 'Jeune coach équipe A'], ['coach2', 'Jeune coach équipe B'], ['rep1', 'Jeune reporter 1'], ['rep2', 'Jeune reporter 2']];
 const COACH = { A: 'coach1', B: 'coach2' }; const isCoach = k => k === 'coach1' || k === 'coach2';
-const coachTxt = (s, t) => { const o = (s.officiels || {})[COACH[t]] || {}; return o.nom ? `${esc(o.nom)}${o.niv ? ' (' + esc(o.niv) + ')' : ''}` : '—'; };
+const coachTxt = (s, t) => { const o = (s.officiels || {})[COACH[t]] || {}; return o.nom ? `${esc(o.nom)}${o.lic ? ' · lic. ' + esc(o.lic) : ''}${o.njo ? ' · JO ' + esc(o.njo) : ''}${o.niv ? ' (' + esc(o.niv) + ')' : ''}` : '—'; };
 const ROLES = {
   co: [['arb1', 'Arbitre 1'], ['arb2', 'Arbitre 2'], ['sec', 'Secrétaire / marqueur'], ['chr', 'Chronométreur'], ['resp', 'Responsable de table'], ...EXTRA_ROLES],
   du: [['arb1', 'Juge-arbitre'], ['arb2', 'Arbitre'], ['sec', 'Marqueur'], ['resp', 'Responsable de table'], ...EXTRA_ROLES]
@@ -368,9 +369,9 @@ function sheetHTML(s) {
     ${s.parties.map(p => { const st = duelState(p, s.cfg, sp.serve); return `<tr><td class="l">${esc(p.lab)}</td><td class="l">${esc(p.a)}</td><td class="l">${esc(p.b)}</td><td>${st.sets.map(x => x[0] + '-' + x[1]).join(' · ')}${!st.done && (st.cur[0] || st.cur[1]) ? ` · (${st.cur[0]}-${st.cur[1]})` : ''}${st.forfeit ? ' forfait' : ''}</td><td>${st.winner ? esc(st.winner === 'A' ? p.a || 'A' : p.b || 'B') : '—'}</td></tr>`; }).join('')}</table>`;
     for (const t of ['A', 'B']) h += `<p class="sh-small"><b>${esc(teamLabel(s, t))}</b> — responsable : ${esc(s.teams[t].prof)} · jeune coach : ${coachTxt(s, t)}</p>`;
   }
-  const roles = ROLES[sp.kind].filter(([k]) => !isCoach(k));
-  h += `<h3>Jeunes officiels</h3><table class="sh-t"><tr><th>Fonction</th><th>Nom Prénom</th><th>Établissement</th><th>Niveau JO</th></tr>
-  ${roles.map(([k, l]) => { const o = s.officiels[k] || {}; return o.nom ? `<tr><td class="l">${l}</td><td class="l">${esc(o.nom)}</td><td>${esc(o.etab)}</td><td>${esc(o.niv)}</td></tr>` : ''; }).join('')}</table>
+  const roles = ROLES[sp.kind];
+  h += `<h3>Jeunes officiels</h3><table class="sh-t"><tr><th>Fonction</th><th>Nom Prénom</th><th>Établissement</th><th>Licence UNSS</th><th>N° JO</th><th>Niveau JO</th></tr>
+  ${roles.map(([k, l]) => { const o = s.officiels[k] || {}; return o.nom ? `<tr><td class="l">${l}</td><td class="l">${esc(o.nom)}</td><td>${esc(o.etab)}</td><td>${esc(o.lic)}</td><td>${esc(o.njo)}</td><td>${esc(o.niv)}</td></tr>` : ''; }).join('')}</table>
   <h3>Observations, réserves, incidents</h3><p class="sh-obs">${esc(s.obs || 'Néant').replace(/\n/g, '<br>')}</p>
   ${s.profNote ? `<h3>Note de l’enseignant</h3><p class="sh-obs">${esc(s.profNote)}</p>` : ''}
   <h3>Signatures</h3><div class="sh-sig">${SIGS.map(([k, l]) => `<div><span>${esc(l(s))}</span>${s.sig && s.sig[k] && /^data:image\/png;base64,/.test(s.sig[k]) ? `<img alt="" src="${s.sig[k]}">` : '<i></i>'}</div>`).join('')}</div>
@@ -474,6 +475,8 @@ function vSetup(s) {
   const inp = (p, l, t = 'text', x = '') => `<label class="f"><span>${l}</span><input type="${t}" data-bind="${p}" value="${esc(get(s, p))}" ${x}></label>`;
   const sel = (p, l, o, x = '') => `<label class="f"><span>${l}</span><select data-bind="${p}" ${x}>${o.map(v => `<option ${String(v) === String(get(s, p)) ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>`;
   const gb = ['handball', 'hand4', 'futsal', 'football'].includes(s.sport);
+  const offRow = (k, l, hide) => { const g = f => esc(get(s, `officiels.${k}.${f}`));
+    return `<div class="off"><span class="${hide ? 'sr' : 'ol'}">${l}</span><input class="o-nom" placeholder="Nom Prénom" aria-label="${l} : nom prénom" data-bind="officiels.${k}.nom" value="${g('nom')}"><input class="o-etab" placeholder="Établissement" aria-label="${l} : établissement" data-bind="officiels.${k}.etab" value="${g('etab')}"><input class="o-lic" placeholder="Licence UNSS" aria-label="${l} : n° de licence UNSS" data-bind="officiels.${k}.lic" value="${g('lic')}"><input class="o-njo" placeholder="N° JO" aria-label="${l} : n° de jeune officiel" data-bind="officiels.${k}.njo" value="${g('njo')}"><select class="o-niv" data-bind="officiels.${k}.niv" aria-label="${l} : niveau JO">${NIV_JO.map(n => `<option value="${n}" ${n === get(s, `officiels.${k}.niv`) ? 'selected' : ''}>${n || 'Niveau JO'}</option>`).join('')}</select></div>`; };
   let h = `<h1>Préparer la feuille</h1><p class="lead">Complète avec les informations de la convocation. Tout est enregistré automatiquement.</p>
   <div class="card"><h3>Activité</h3>${lock ? '<p class="small muted">Le match a commencé : l’activité ne peut plus être changée.</p>' : ''}
   <div class="sports">${Object.entries(SPORTS).map(([k, v]) => `<button data-act="sport" data-v="${k}" class="${k === s.sport ? 'on' : ''}" ${lock ? 'disabled' : ''}>${v.nom}<small>${v.kind === 'co' ? 'collectif' : 'duel'}</small></button>`).join('')}</div></div>
@@ -490,14 +493,14 @@ function vSetup(s) {
     ${T.players.map((j, i) => `<div class="pr"><input class="n" inputmode="numeric" aria-label="Numéro" placeholder="N°" data-bind="teams.${t}.players.${i}.n" value="${esc(j.n)}"><input placeholder="Nom" aria-label="Nom" data-bind="teams.${t}.players.${i}.nom" value="${esc(j.nom)}"><input placeholder="Prénom" aria-label="Prénom" data-bind="teams.${t}.players.${i}.prenom" value="${esc(j.prenom)}"><input class="lic" placeholder="Licence" aria-label="Licence" data-bind="teams.${t}.players.${i}.lic" value="${esc(j.lic)}"><label class="ck"><input type="checkbox" data-bind="teams.${t}.players.${i}.cap" ${j.cap ? 'checked' : ''}>C</label>${gb ? `<label class="ck"><input type="checkbox" data-bind="teams.${t}.players.${i}.gb" ${j.gb ? 'checked' : ''}>GB</label>` : '<span></span>'}<button data-act="delp" data-t="${t}" data-i="${i}" aria-label="Retirer">×</button></div>`).join('')}
     <div class="row"><button data-act="addp" data-t="${t}">+ Joueur</button><button data-act="paste" data-t="${t}">Coller une liste</button></div>`;
     const ck = COACH[t];
-    h += `<div class="coachz"><h3>Jeune coach</h3><div class="off"><span class="sr">Jeune coach équipe ${t}</span><input placeholder="Nom Prénom" aria-label="Jeune coach équipe ${t}" data-bind="officiels.${ck}.nom" value="${esc(get(s, `officiels.${ck}.nom`))}"><input placeholder="Établissement" aria-label="Établissement du jeune coach" data-bind="officiels.${ck}.etab" value="${esc(get(s, `officiels.${ck}.etab`))}"><select data-bind="officiels.${ck}.niv" aria-label="Niveau JO du jeune coach">${NIV_JO.map(n => `<option value="${n}" ${n === get(s, `officiels.${ck}.niv`) ? 'selected' : ''}>${n || 'Niveau JO'}</option>`).join('')}</select></div></div>`;
+    h += `<div class="coachz"><h3>Jeune coach</h3>${offRow(ck, `Jeune coach équipe ${t}`, true)}</div>`;
     h += `</div>`;
   }
   h += `</div>`;
   if (sp.kind === 'du') h += `<div class="card"><h3>Parties</h3><p class="small muted">Une ligne par partie : intitulé, joueur(s) de l’équipe A, joueur(s) de l’équipe B.</p>
   ${s.parties.map((p, i) => `<div class="party"><input data-bind="parties.${i}.lab" value="${esc(p.lab)}" aria-label="Partie"><input placeholder="Joueur(s) ${esc(teamLabel(s, 'A'))}" data-bind="parties.${i}.a" value="${esc(p.a)}"><input placeholder="Joueur(s) ${esc(teamLabel(s, 'B'))}" data-bind="parties.${i}.b" value="${esc(p.b)}"><button data-act="delparty" data-i="${i}" ${p.h.length ? 'disabled' : ''} aria-label="Retirer">×</button></div>`).join('')}
   <button data-act="addparty">+ Partie</button></div>`;
-  h += `<div class="card"><h3>Jeunes officiels</h3>${ROLES[sp.kind].filter(([k]) => !isCoach(k)).map(([k, l]) => `<div class="off"><span>${l}</span><input placeholder="Nom Prénom" data-bind="officiels.${k}.nom" value="${esc(get(s, `officiels.${k}.nom`))}"><input placeholder="Établissement" data-bind="officiels.${k}.etab" value="${esc(get(s, `officiels.${k}.etab`))}"><select data-bind="officiels.${k}.niv" aria-label="Niveau JO">${NIV_JO.map(n => `<option value="${n}" ${n === get(s, `officiels.${k}.niv`) ? 'selected' : ''}>${n || 'Niveau JO'}</option>`).join('')}</select></div>`).join('')}</div>
+  h += `<div class="card"><h3>Jeunes officiels</h3><p class="small muted" style="margin-top:-4px">Arbitres, table de marque et jeunes reporters. Le numéro JO figure sur la carte de jeune officiel UNSS.</p>${ROLES[sp.kind].filter(([k]) => !isCoach(k)).map(([k, l]) => offRow(k, l)).join('')}</div>
   <div class="row" style="justify-content:flex-end"><button class="btn-p" data-act="go" data-v="live" style="min-height:54px;font-size:18px">Passer au direct →</button></div>`;
   return h;
 }
