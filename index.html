@@ -233,6 +233,22 @@ const SPORTS = {
 const actOf = (s, k) => (SPORTS[s.sport].acts || []).find(a => a[0] === k) || [k, k === 'tm' ? 'Temps mort' : k, 0];
 const periodName = (s, p) => p <= s.cfg.periods ? `${SPORTS[s.sport].pn} ${p}` : `Prolong. ${p - s.cfg.periods}`;
 
+/* ---------- Création d'une feuille vierge (élève et prof) ---------- */
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+function cfgFor(sport) {
+  const sp = SPORTS[sport];
+  return sp.kind === 'co' ? { periods: sp.periods, dur: sp.dur, ot: sp.ot, tm: sp.tm } : { pts: sp.pts, max: sp.max, sets: sp.sets, format: 'Match simple' };
+}
+function mkParties(sport, fmt) { return (SPORTS[sport].formats[fmt] || ['Simple']).map(l => ({ lab: l, a: '', b: '', h: [], first: 'A', forfeit: '' })); }
+function blankSheet(sport) {
+  const sp = SPORTS[sport], cfg = cfgFor(sport);
+  return { id: uid(), v: 1, sport, status: 'prep', created: Date.now(), updated: Date.now(),
+    meta: { comp: '', niveau: 'District', date: today(), heure: '', lieu: '', cat: 'Minimes', sexe: 'Mixte', num: '', poule: '' },
+    teams: { A: { nom: '', as: '', prof: '', players: [] }, B: { nom: '', as: '', prof: '', players: [] } },
+    officiels: {}, cfg, events: [], period: 1, clock: { rem: (cfg.dur || 0) * 60, run: false, at: 0 },
+    parties: sp.kind === 'du' ? mkParties(sport, cfg.format) : [], obs: '', sig: {}, tab: { A: '', B: '' }, forfait: '' };
+}
+
 /* ---------- Collectif : calculs ---------- */
 function coScore(s, upto) {
   const sc = { A: 0, B: 0 };
@@ -409,7 +425,6 @@ let storageOK = store(KEY, DB);
 let view = 'home', tab = 'log', party = 0, swap = false;
 const cur = () => DB.sheets[DB.cur];
 const save = () => { const s = cur(); if (s) s.updated = Date.now(); storageOK = store(KEY, DB); };
-const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
 const get = (o, p) => p.split('.').reduce((x, k) => x == null ? x : x[k], o) ?? '';
 function setPath(o, p, v) { const ks = p.split('.'); let x = o; for (let i = 0; i < ks.length - 1; i++) x = x[ks[i]] ?? (x[ks[i]] = {}); x[ks.at(-1)] = v; }
 let tT; function toast(m, warn) { const t = $('#toast'); t.textContent = m; t.className = warn ? 'warn' : ''; t.style.display = 'block'; clearTimeout(tT); tT = setTimeout(() => t.style.display = 'none', warn ? 5200 : 2600); if (warn) try { navigator.vibrate && navigator.vibrate(200) } catch (e) { } }
@@ -417,20 +432,7 @@ const ov = h => { $('#ov').innerHTML = h ? `<div class="ov" data-act="ovbg"><div
 function ask(msg, okLabel, fn) { pending = fn; ov(`<h3>${esc(msg)}</h3><div class="row" style="justify-content:flex-end;margin-top:14px"><button data-act="close">Annuler</button><button class="btn-p" data-act="confirm">${esc(okLabel)}</button></div>`); }
 let pending = null;
 
-function cfgFor(sport) {
-  const sp = SPORTS[sport];
-  return sp.kind === 'co' ? { periods: sp.periods, dur: sp.dur, ot: sp.ot, tm: sp.tm } : { pts: sp.pts, max: sp.max, sets: sp.sets, format: 'Match simple' };
-}
-function mkParties(sport, fmt) { return (SPORTS[sport].formats[fmt] || ['Simple']).map(l => ({ lab: l, a: '', b: '', h: [], first: 'A', forfeit: '' })); }
-function newSheet() {
-  const sport = 'handball';
-  const s = { id: uid(), v: 1, sport, status: 'prep', created: Date.now(), updated: Date.now(),
-    meta: { comp: '', niveau: 'District', date: today(), heure: '', lieu: '', cat: 'Minimes', sexe: 'Mixte', num: '', poule: '' },
-    teams: { A: { nom: '', as: '', prof: '', players: [] }, B: { nom: '', as: '', prof: '', players: [] } },
-    officiels: {}, cfg: cfgFor(sport), events: [], period: 1, clock: { rem: SPORTS[sport].dur * 60, run: false, at: 0 },
-    parties: [], obs: '', sig: {}, tab: { A: '', B: '' }, forfait: '' };
-  DB.sheets[s.id] = s; DB.cur = s.id; save(); go('setup');
-}
+function newSheet() { const s = blankSheet('handball'); DB.sheets[s.id] = s; DB.cur = s.id; save(); go('setup'); }
 function setSport(s, sport) {
   s.sport = sport; s.cfg = cfgFor(sport); s.period = 1; s.clock = { rem: s.cfg.dur ? s.cfg.dur * 60 : 0, run: false, at: 0 };
   s.parties = SPORTS[sport].kind === 'du' ? mkParties(sport, s.cfg.format) : [];
@@ -460,7 +462,7 @@ function vHome() {
   const list = Object.values(DB.sheets).sort((a, b) => b.updated - a.updated);
   return `<section class="hero"><div><h1>La table de marque, en direct</h1>
   <p class="lead">Remplis la feuille de match UNSS pendant la rencontre : chrono, score, fautes, cartons, temps morts, sets. À la fin, signe et envoie la feuille à ton professeur.</p>
-  <button class="btn-p" data-act="new" style="min-height:54px;font-size:18px">+ Nouvelle feuille de match</button></div>
+  <div class="row"><button class="btn-p" data-act="new" style="min-height:54px;font-size:18px">+ Nouvelle feuille de match</button><button class="btn-b" data-act="imp" style="min-height:54px;font-size:16px">Importer une feuille du prof</button></div></div>
   <div class="mini" aria-hidden="true"><div>12</div><div class="c">18:42</div><div>9</div></div></section>
   <h2>Mes feuilles</h2>${list.length ? `<div class="hist">${list.map(s => { const r = result(s); return `<div class="hcard" style="border-left-color:${s.status === 'clos' ? 'var(--B)' : 'var(--A)'}">
   <div><div><b>${esc(SPORTS[s.sport].nom)}</b> · ${esc(fmtDate(s.meta.date))} <span class="tag ${s.status}">${STATUTS[s.status]}</span></div>
@@ -489,7 +491,7 @@ function vSetup(s) {
   for (const t of ['A', 'B']) {
     const T = s.teams[t];
     h += `<div class="card" style="border-top:6px solid var(--${t})"><h3 class="team-h">Équipe ${t}</h3><div class="fields">${inp(`teams.${t}.nom`, 'Établissement / équipe')}${inp(`teams.${t}.as`, 'AS (nom ou n°)')}${inp(`teams.${t}.prof`, 'Professeur responsable')}</div>`;
-    if (sp.kind === 'co') h += `<h3 style="margin-top:14px">Joueurs (${T.players.length}/${sp.maxJ})</h3>
+    if (sp.kind === 'co') h += `<h3 style="margin-top:14px">Joueurs (${T.players.length}/${sp.maxJ})</h3>${T.players.some(j => String(j.n).trim() === '') ? '<p class="small" style="color:var(--c3);margin:-4px 0 8px">Saisis le numéro de maillot de chaque joueur : seuls les joueurs numérotés apparaissent pendant le direct.</p>' : ''}
     ${T.players.map((j, i) => `<div class="pr"><input class="n" inputmode="numeric" aria-label="Numéro" placeholder="N°" data-bind="teams.${t}.players.${i}.n" value="${esc(j.n)}"><input placeholder="Nom" aria-label="Nom" data-bind="teams.${t}.players.${i}.nom" value="${esc(j.nom)}"><input placeholder="Prénom" aria-label="Prénom" data-bind="teams.${t}.players.${i}.prenom" value="${esc(j.prenom)}"><input class="lic" placeholder="Licence" aria-label="Licence" data-bind="teams.${t}.players.${i}.lic" value="${esc(j.lic)}"><label class="ck"><input type="checkbox" data-bind="teams.${t}.players.${i}.cap" ${j.cap ? 'checked' : ''}>C</label>${gb ? `<label class="ck"><input type="checkbox" data-bind="teams.${t}.players.${i}.gb" ${j.gb ? 'checked' : ''}>GB</label>` : '<span></span>'}<button data-act="delp" data-t="${t}" data-i="${i}" aria-label="Retirer">×</button></div>`).join('')}
     <div class="row"><button data-act="addp" data-t="${t}">+ Joueur</button><button data-act="paste" data-t="${t}">Coller une liste</button></div>`;
     const ck = COACH[t];
@@ -653,6 +655,11 @@ document.addEventListener('click', async e => {
   switch (a) {
     case 'home': go('home'); break;
     case 'new': newSheet(); break;
+    case 'imp': ov(`<h3>Importer une feuille préparée par le prof</h3><p class="small muted">Ouvre le fichier reçu (.json) ou colle le code commençant par TMU1.</p><input type="file" id="impfile" accept=".json,application/json,text/plain"><label class="f" style="margin-top:10px"><span>…ou colle le code</span><textarea id="impcode" placeholder="TMU1:…"></textarea></label><div class="row" style="justify-content:flex-end;margin-top:10px"><button data-act="close">Annuler</button><button class="btn-p" data-act="doimp">Importer</button></div>`); break;
+    case 'doimp': { let o; try { const f = $('#impfile').files[0]; o = fromCode(f ? await f.text() : $('#impcode').value); } catch (x) { return toast('Fichier ou code non reconnu.', true); }
+      if (!validSheet(o)) return toast('Ce n’est pas une feuille TablMarkUNSS.', true);
+      const put = () => { o.updated = Date.now(); o.events = o.events || []; o.parties = o.parties || []; o.sig = o.sig || {}; DB.sheets[o.id] = o; DB.cur = o.id; save(); ov(''); go(o.status === 'clos' ? 'end' : 'setup'); toast('Feuille importée : complète les numéros de maillot.'); };
+      if (DB.sheets[o.id]) ask('Cette feuille existe déjà sur la tablette. La remplacer ?', 'Remplacer', put); else put(); } break;
     case 'open': DB.cur = d.id; save(); { const t = cur(); go(t.status === 'prep' ? 'setup' : t.status === 'clos' ? 'end' : 'live'); } break;
     case 'del': ask('Supprimer définitivement cette feuille ?', 'Supprimer', () => { delete DB.sheets[d.id]; if (DB.cur === d.id) DB.cur = null; save(); render(); }); break;
     case 'confirm': { const f = pending; pending = null; ov(''); f && f(); } break;
