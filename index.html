@@ -374,7 +374,7 @@ function sheetHTML(s) {
       const st = playerStats(s, t), T = s.teams[t];
       h += `<h3>Équipe ${t} — ${esc(teamLabel(s, t))}</h3><p class="sh-small">Responsable : ${esc(T.prof)} · Jeune coach : ${coachTxt(s, t)} · Temps morts : ${tmUsed(s, t)}</p>
       <table class="sh-t"><tr><th>N°</th><th>Nom Prénom</th><th>Licence</th><th>${sp.acts.some(a => a[2] > 1) ? 'Pts' : 'Buts'}</th>${cols.map(c => `<th>${esc(c[1])}</th>`).join('')}</tr>
-      ${st.map(x => `<tr><td>${esc(x.j.n)}${x.j.cap ? ' (C)' : ''}${x.j.gb ? ' GB' : ''}</td><td class="l">${esc(x.j.nom)} ${esc(x.j.prenom)}</td><td>${esc(x.j.lic)}</td><td>${x.pts || ''}</td>${cols.map(c => `<td>${x.c[c[0]] || ''}</td>`).join('')}</tr>`).join('')}</table>`;
+      ${st.map(x => `<tr><td>${esc(x.j.n)}${x.j.cap ? ' (C)' : ''}${x.j.gb ? ' GB' : ''}</td><td class="l">${esc(x.j.nom)} ${esc(x.j.prenom)}${x.j.obs ? ` <small style="color:#a14a00">(${esc(x.j.obs)})</small>` : ''}</td><td>${esc(x.j.lic)}</td><td>${x.pts || ''}</td>${cols.map(c => `<td>${x.c[c[0]] || ''}</td>`).join('')}</tr>`).join('')}</table>`;
     }
     const run = coRunning(s);
     h += `<h3>Déroulé du match</h3><table class="sh-t sh-log"><tr><th>Période</th><th>Temps</th><th>Équipe</th><th>N°</th><th>Action</th><th>Score</th></tr>
