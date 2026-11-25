@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TablMarkUNSS Élève</title>
+<meta name="theme-color" content="#121418">
+<meta name="description" content="Table de marque UNSS : saisie en direct des feuilles de match par les jeunes officiels.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TablMark Élève">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/*
+VOICE: outil de table de marque, direct et lisible au gymnase, sans décor.
+IDEA: le tableau d'affichage du gymnase + la feuille de match papier officielle.
+PICTURE: le tableau de score (équipes, chrono, score géant) est l'image principale.
+COLOUR and TYPE: sol clair / nuit ardoise, rouge équipe A, bleu équipe B, encre noire ; Barlow Condensed pour les chiffres, Barlow pour le texte.
+LAYOUT: barre d'appli, tableau de score pleine largeur, deux colonnes d'actions par équipe, journal en dessous ; tout s'empile sous 600px.
+*/
+:root{color-scheme:light dark;--bg:light-dark(#eef0ec,#0f1317);--panel:light-dark(#ffffff,#192028);--ink:light-dark(#121418,#eef1f4);--mute:light-dark(#5b6370,#9aa4b1);--line:light-dark(#d7dbd4,#2b343f);
+--A:#d7263d;--B:#1f63d6;--Ad:light-dark(#fbe7ea,#3a1a20);--Bd:light-dark(#e5edfc,#16253f);--board:#11151b;--y:#f2c400;--o:#f08a00;--r:#d7263d;--ok:#1b8a4b;
+--cond:'Barlow Condensed','Arial Narrow',Arial,sans-serif}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Barlow,Arial,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;border-radius:10px;min-height:44px;padding:0 14px;background:var(--panel);border:1.5px solid var(--line);font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--B);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.btn-p{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn-d{color:var(--r);border-color:color-mix(in srgb,var(--r) 45%,transparent)}
+input,select,textarea{width:100%;min-height:44px;font-size:16px;border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;background:light-dark(#fff,#0f1419)}
+textarea{min-height:90px;resize:vertical}
+.top{position:sticky;top:0;z-index:20;background:var(--ink);color:var(--bg);display:flex;align-items:center;gap:10px;padding:8px max(3vw,12px);flex-wrap:wrap}
+.brand{font:700 24px/1 var(--cond);letter-spacing:.01em;display:flex;align-items:center;gap:8px;background:none;border:0;color:inherit;padding:0}
+.brand img{width:34px;height:34px;border-radius:8px;display:block}
+.brand small{font:600 13px Barlow,Arial;background:var(--bg);color:var(--ink);padding:2px 8px;border-radius:20px}
+.nav{display:flex;gap:4px;margin-left:auto;overflow-x:auto}
+.nav button{flex:none;background:transparent;color:inherit;border:0;opacity:.7;white-space:nowrap;padding:0 10px}
+.nav button.on{opacity:1;box-shadow:inset 0 -3px 0 currentColor;border-radius:0}
+main{max-width:1240px;margin:auto;padding:16px max(3vw,12px) 90px}
+h1{font:700 clamp(32px,5vw,48px)/1.05 var(--cond);margin:8px 0 6px;text-wrap:balance}
+h2{font:700 26px/1.1 var(--cond);margin:18px 0 8px}
+h3{font:700 20px/1.1 var(--cond);margin:0 0 8px}
+.lead{color:var(--mute);max-width:65ch;margin:0 0 16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.f{display:grid;gap:4px}.f span{font-size:13px;color:var(--mute);font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--mute)}.small{font-size:13px}
+.tag{display:inline-block;font-size:13px;font-weight:600;padding:2px 9px;border-radius:20px;background:var(--line);white-space:nowrap}
+.tag.live{background:var(--A);color:#fff}.tag.clos{background:var(--ink);color:var(--bg)}.tag.valide{background:var(--ok);color:#fff}
+.dotA,.dotB{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--A);margin-right:6px}.dotB{background:var(--B)}
+.ov{position:fixed;inset:0;background:rgb(0 0 0/.55);z-index:50;display:grid;place-items:center;padding:14px}
+.dlg{background:var(--panel);border-radius:16px;padding:18px;width:min(560px,100%);max-height:90vh;overflow:auto}
+#toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:600;max-width:min(92vw,560px);box-shadow:0 8px 24px rgb(0 0 0/.3);display:none}
+#toast.warn{background:var(--o);color:#111}
+.scroll{overflow-x:auto}
+table.list{width:100%;border-collapse:collapse;font-size:15px}
+table.list th{text-align:left;font-size:13px;color:var(--mute);padding:8px;border-bottom:2px solid var(--line);white-space:nowrap}
+table.list td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.list td.num{text-align:right;font:700 18px var(--cond);white-space:nowrap}
+table.list tr.click{cursor:pointer}table.list tr.click:hover td{background:color-mix(in srgb,var(--line) 40%,transparent)}
+.empty{padding:28px;text-align:center;color:var(--mute);border:2px dashed var(--line);border-radius:14px}
+#print{display:none}
+@media print{#print{display:block}.top,main,#ov,#toast{display:none!important}}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mute);font-size:12px}.stack td:empty{display:none}table.list.stack td{border:0}table.list.stack tr{border-bottom:1px solid var(--line)}}
+@media(prefers-reduced-motion:no-preference){.flash{animation:fl .5s}@keyframes fl{from{transform:scale(1.18)}to{transform:none}}}
+
+.sheet{background:#fff;color:#111;font:13px/1.4 Barlow,Arial,sans-serif;padding:18px;max-width:900px;margin:auto}
+.sh-h{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:8px;margin-bottom:10px}
+.sh-brand{font:700 13px 'Barlow Condensed',Arial;letter-spacing:.02em;color:#c8102e}.sheet h2{margin:0;font:700 24px/1.1 'Barlow Condensed',Arial}
+.sheet h3{font:700 16px 'Barlow Condensed',Arial;margin:16px 0 6px;border-bottom:1px solid #999}
+.sh-st{border:1.5px solid #111;padding:2px 8px;font-weight:700;font-size:12px}
+.sh-t,.sh-meta{width:100%;border-collapse:collapse;margin:6px 0}.sh-t th,.sh-t td,.sh-meta th,.sh-meta td{border:1px solid #888;padding:3px 6px;text-align:center}
+.sh-meta th{background:#eee;text-align:left;width:16%}.sh-meta td{text-align:left}.sh-t th{background:#eee}.sh-t td.l{text-align:left}
+.sh-score{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin:10px 0;border:2px solid #111;padding:8px}
+.sh-score small{display:block;color:#555}.sh-score>div:last-child{text-align:right}.sh-big{font:700 40px 'Barlow Condensed',Arial}
+.sh-win{margin:4px 0}.sh-small{margin:4px 0;font-size:12px;color:#333}.sh-obs{border:1px solid #888;padding:6px;min-height:36px}
+.sh-sig{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.sh-sig div{border:1px solid #888;padding:4px;min-height:80px}
+.sh-sig span{font-size:11px;display:block}.sh-sig img{width:100%;height:56px;object-fit:contain}.sh-f{margin-top:14px;font-size:11px;color:#555}
+@media(max-width:600px){.sh-sig{grid-template-columns:1fr 1fr}.sh-big{font-size:30px}.sh-t{font-size:12px}}
+@media print{body *{visibility:hidden}#print,#print *{visibility:visible}#print{position:absolute;inset:0}.sheet{padding:0}}
+/* --- Élève --- */
+.sports{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.sports button{min-height:64px;display:grid;place-items:center;text-align:center;font:700 19px/1.1 var(--cond)}
+.sports button small{font:400 12px Barlow,Arial;color:var(--mute)}
+.sports button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}.sports button.on small{color:inherit;opacity:.7}
+.team-h{display:flex;align-items:center;gap:8px}
+.pr{display:grid;grid-template-columns:58px minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) auto auto 44px;gap:6px;margin-bottom:6px;align-items:center}
+.pr input{min-height:40px;padding:6px 8px}
+.ck{display:flex;align-items:center;gap:3px;font-size:13px;font-weight:600}.ck input{width:20px;min-height:20px}
+.pr button{padding:0;min-height:40px}
+.party{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1.2fr) 44px;gap:6px;margin-bottom:6px}
+.off{display:grid;grid-template-columns:160px minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:6px;align-items:center;margin-bottom:6px}
+.board{background:var(--board);color:#fff;border-radius:18px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;overflow:hidden;box-shadow:0 10px 30px rgb(0 0 0/.25)}
+.tm{padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.tmA{background:linear-gradient(160deg,var(--A),#8e1424)}.tmB{background:linear-gradient(200deg,var(--B),#123f8f);text-align:right;align-items:flex-end}
+.tn{font:700 clamp(16px,2.4vw,24px)/1.1 var(--cond);overflow-wrap:anywhere}
+.ts{font:700 clamp(64px,11vw,128px)/.9 var(--cond);font-variant-numeric:tabular-nums}
+.pills{display:flex;gap:6px;flex-wrap:wrap}.pills span{background:rgb(0 0 0/.28);border-radius:20px;padding:1px 9px;font-size:13px;white-space:nowrap}
+.pills span.hot{background:var(--y);color:#111}
+.clk{padding:12px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:190px}
+.per{display:flex;align-items:center;gap:6px;font:600 16px var(--cond);white-space:nowrap}
+.per button,.cbtn button{background:#222a35;border-color:#38424f;color:#fff;min-height:40px;padding:0 10px}
+.time{font:700 clamp(44px,7vw,76px)/1 var(--cond);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.time.run{color:#7ef0a6}
+.cbtn{display:flex;gap:6px}.cbtn .play{min-width:64px;font-size:20px;background:#fff;color:#111}
+.pads{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.pad{background:var(--panel);border-radius:14px;padding:10px;border-top:6px solid var(--A)}.padB{border-top-color:var(--B)}
+.pad h4{margin:0 0 8px;font:700 17px var(--cond)}
+.acts{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.act{min-height:58px;font:700 18px/1.05 var(--cond);padding:4px}
+.padA .c-p{background:var(--A);color:#fff;border-color:var(--A)}.padB .c-p{background:var(--B);color:#fff;border-color:var(--B)}
+.c-y{border-left:8px solid var(--y)}.c-o{border-left:8px solid var(--o)}.c-r{border-left:8px solid var(--r)}.c-f{border-left:8px solid var(--mute)}.c-s{border-left:8px solid var(--ok)}.c-tm{border-style:dashed}
+.alerts{display:grid;gap:6px;margin-top:10px}.alert{background:color-mix(in srgb,var(--y) 30%,var(--panel));border-left:6px solid var(--o);padding:8px 12px;border-radius:8px;font-weight:600}
+.tabs{display:flex;gap:6px;margin:16px 0 8px}.tabs button.on{background:var(--ink);color:var(--bg)}
+.log{list-style:none;margin:0;padding:0;background:var(--panel);border-radius:14px;overflow:hidden}
+.log li{display:grid;grid-template-columns:86px 28px minmax(0,1fr) auto 44px;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line)}
+.log .lt{font:600 14px var(--cond);color:var(--mute);white-space:nowrap}.log .ls{font:700 17px var(--cond);white-space:nowrap}
+.log b.tA,.log b.tB{color:#fff;background:var(--A);border-radius:6px;text-align:center;font-size:13px}.log b.tB{background:var(--B)}
+.log button{min-height:36px;padding:0;border:0;color:var(--mute)}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--panel);border-top:1px solid var(--line);padding:8px max(3vw,12px);display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;margin:10px 0}
+.chip{min-height:64px;display:grid;place-items:center;padding:4px;line-height:1.1}.chip b{font:700 26px var(--cond)}.chip small{font-size:11px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.chip i{font-style:normal;font-size:11px;background:var(--line);border-radius:10px;padding:0 6px}.chip.out{opacity:.45}
+.du-parts{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}.du-parts button{white-space:nowrap}.du-parts button.on{background:var(--ink);color:var(--bg)}
+.du-tot{font:700 22px var(--cond);text-align:center;margin:6px 0}
+.duel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.zone{border:0;border-radius:18px;color:#fff;min-height:clamp(220px,42vh,380px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px;position:relative}
+.zA{background:linear-gradient(160deg,var(--A),#8e1424)}.zB{background:linear-gradient(200deg,var(--B),#123f8f)}
+.zone .zn{font:700 clamp(16px,2.6vw,26px)/1.1 var(--cond);text-align:center;overflow-wrap:anywhere}
+.zone .zs{font:700 clamp(90px,18vw,180px)/.85 var(--cond);font-variant-numeric:tabular-nums}
+.zone .zw{background:rgb(0 0 0/.25);border-radius:20px;padding:2px 12px;font-weight:600}
+.zone .srv{position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgb(255 255 255/.35)}
+.zone:disabled{opacity:.6}
+.sets{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px}.sets span{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font:700 18px var(--cond)}
+.banner{background:var(--ok);color:#fff;border-radius:12px;padding:12px 14px;font-weight:600;margin-top:10px;text-align:center}
+.sigs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sig{border:1.5px dashed var(--line);border-radius:10px;padding:8px;background:light-dark(#fff,#0f1419)}
+.sig canvas{width:100%;height:110px;touch-action:none;background:#fff;border-radius:6px;display:block}
+.sig .row{justify-content:space-between;margin-bottom:4px}.sig .row button{min-height:32px;font-size:13px}
+.res{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;text-align:center}
+.res .big{font:700 clamp(54px,10vw,96px)/1 var(--cond)}
+.res .nm{font:700 22px/1.1 var(--cond)}
+.hist{display:grid;gap:8px}
+.hcard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--A);border-radius:12px;padding:10px 12px}
+.hcard .sc{font:700 30px var(--cond);white-space:nowrap}
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:center;margin-bottom:10px}
+.mini{background:var(--board);color:#fff;border-radius:16px;display:grid;grid-template-columns:1fr auto 1fr;overflow:hidden}
+.mini div{padding:16px;font:700 64px/1 var(--cond)}.mini div:first-child{background:var(--A)}.mini div:last-child{background:var(--B);text-align:right}.mini .c{font-size:30px;align-self:center;color:#7ef0a6}
+.storage{background:var(--o);color:#111;padding:8px 12px;border-radius:10px;font-weight:600;margin-bottom:12px}
+@media(max-width:820px){.pr{grid-template-columns:52px minmax(0,1fr) minmax(0,1fr) 44px;grid-auto-flow:row dense;padding-bottom:6px;border-bottom:1px solid var(--line)}.pr .n{grid-area:1/1}.pr button{grid-area:1/4}.pr .lic{grid-column:1/3;grid-row:2}.off{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.off>span{grid-column:1/-1;font-weight:600}}
+@media(max-width:600px){.board{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.clk{grid-column:1/-1;order:-1;min-width:0}.tm{padding:10px}
+.pads{grid-template-columns:1fr}.hero{grid-template-columns:1fr}.party{grid-template-columns:minmax(0,1fr) 44px}.party input:nth-child(1){grid-column:1/-1}.party input{grid-column:1}.party button{grid-row:2;grid-column:2}
+.log li{grid-template-columns:70px 26px minmax(0,1fr) 36px}.log .ls{display:none}.sigs{grid-template-columns:1fr}.res .nm{font-size:17px}}
+</style>
+</head>
+<body>
+<header class="top"><button class="brand" data-act="home" aria-label="Accueil"><img src="data:image/png;base64,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" alt="">TablMarkUNSS <small>Élève</small></button><nav class="nav" id="nav"></nav></header>
+<main id="app"></main>
+<div id="ov"></div><div id="toast" role="status" aria-live="polite"></div><div id="print"></div>
+<script>
+/* ===== TablMarkUNSS — noyau commun (élève + prof) ===== */
+const TMU_VERSION = '1.0';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const pad2 = n => String(n).padStart(2, '0');
+const fmtT = sec => { sec = Math.max(0, Math.round(sec)); return pad2(Math.floor(sec / 60)) + ':' + pad2(sec % 60); };
+const fmtDate = d => { if (!d) return ''; const [y, m, j] = d.split('-'); return j ? `${j}/${m}/${y}` : d; };
+
+const NIVEAUX = ['AS / Établissement', 'District', 'Départemental', 'Académique', 'Inter-académique', 'Championnat de France'];
+const CATS = ['Benjamins', 'Minimes', 'Cadets', 'Juniors', 'Lycées', 'Collèges', 'Sport partagé'];
+const SEXES = ['Filles', 'Garçons', 'Mixte'];
+const NIV_JO = ['', 'Établissement', 'District', 'Départemental', 'Académique', 'National', 'International'];
+const ROLES = {
+  co: [['arb1', 'Arbitre 1'], ['arb2', 'Arbitre 2'], ['sec', 'Secrétaire / marqueur'], ['chr', 'Chronométreur'], ['resp', 'Responsable de table']],
+  du: [['arb1', 'Juge-arbitre'], ['arb2', 'Arbitre'], ['sec', 'Marqueur'], ['resp', 'Responsable de table']]
+};
+
+/* acts : [clé, libellé, points, couleur] — couleur : y jaune, o orange, r rouge, f faute, s remplacement */
+const HAND_ACTS = [['but', 'But', 1], ['b7', 'But 7 m', 1], ['av', 'Avertissement', 0, 'y'], ['2m', '2 min', 0, 'o'], ['dq', 'Disqualif.', 0, 'r']];
+const SPORTS = {
+  handball: { nom: 'Handball', kind: 'co', periods: 2, pn: 'Mi-temps', dur: 20, ot: 5, maxJ: 14, tm: 3, acts: HAND_ACTS, max2m: 3 },
+  hand4: { nom: 'Hand à 4', kind: 'co', periods: 2, pn: 'Période', dur: 10, ot: 3, maxJ: 8, tm: 2, acts: HAND_ACTS, max2m: 3 },
+  futsal: { nom: 'Futsal', kind: 'co', periods: 2, pn: 'Mi-temps', dur: 20, ot: 5, maxJ: 12, tm: 2,
+    acts: [['but', 'But', 1], ['f', 'Faute', 0, 'f'], ['cj', 'Carton jaune', 0, 'y'], ['cr', 'Carton rouge', 0, 'r']],
+    teamFoul: { keys: ['f'], limit: 5, msg: '5 fautes cumulées : dès la 6e, coup franc direct sans mur.' } },
+  basket: { nom: 'Basketball', kind: 'co', periods: 4, pn: 'Quart-temps', dur: 10, ot: 5, maxJ: 12, tm: 5, running: true,
+    acts: [['p1', '1 pt', 1], ['p2', '2 pts', 2], ['p3', '3 pts', 3], ['f', 'Faute P', 0, 'f'], ['ft', 'Faute T', 0, 'y'], ['fu', 'Faute U', 0, 'o'], ['fd', 'Faute D', 0, 'r']],
+    persoKeys: ['f', 'ft', 'fu', 'fd'], persoMax: 5,
+    teamFoul: { keys: ['f', 'ft', 'fu', 'fd'], limit: 4, msg: '4 fautes d’équipe dans le quart-temps : lancers francs dès la 5e.' } },
+  b3x3: { nom: 'Basket 3×3', kind: 'co', periods: 1, pn: 'Période', dur: 10, ot: 0, maxJ: 4, tm: 1, running: true, target: 21,
+    acts: [['p1', '1 pt', 1], ['p2', '2 pts', 2], ['f', 'Faute', 0, 'f'], ['ft', 'Faute T', 0, 'y'], ['fu', 'Faute U', 0, 'o']],
+    teamFoul: { keys: ['f', 'ft', 'fu'], limit: 6, msg: '6 fautes d’équipe : 2 lancers francs dès la 7e.' }, cumulFoul: true },
+  football: { nom: 'Football', kind: 'co', periods: 2, pn: 'Mi-temps', dur: 30, ot: 10, maxJ: 16, tm: 0,
+    acts: [['but', 'But', 1], ['cj', 'Carton jaune', 0, 'y'], ['cr', 'Carton rouge', 0, 'r'], ['rp', 'Entrée (rempl.)', 0, 's']] },
+  badminton: { nom: 'Badminton', kind: 'du', pts: 21, max: 30, sets: 2, serve: 'bad',
+    formats: { 'Match simple': ['Simple'], 'Match double': ['Double'], 'Rencontre par équipes': ['Simple fille', 'Simple garçon', 'Double filles', 'Double garçons', 'Double mixte'] } },
+  tt: { nom: 'Tennis de table', kind: 'du', pts: 11, max: 0, sets: 3, serve: 'tt',
+    formats: { 'Match simple': ['Simple'], 'Match double': ['Double'], 'Rencontre par équipes': ['Simple 1', 'Simple 2', 'Double', 'Simple 3', 'Simple 4'] } }
+};
+const actOf = (s, k) => (SPORTS[s.sport].acts || []).find(a => a[0] === k) || [k, k === 'tm' ? 'Temps mort' : k, 0];
+const periodName = (s, p) => p <= s.cfg.periods ? `${SPORTS[s.sport].pn} ${p}` : `Prolong. ${p - s.cfg.periods}`;
+
+/* ---------- Collectif : calculs ---------- */
+function coScore(s, upto) {
+  const sc = { A: 0, B: 0 };
+  for (const e of s.events) { if (upto && e === upto) { sc[e.team] += e.pts || 0; break; } sc[e.team] += e.pts || 0; }
+  return sc;
+}
+function coRunning(s) { // score après chaque événement
+  const sc = { A: 0, B: 0 }; return s.events.map(e => { sc[e.team] += e.pts || 0; return { A: sc.A, B: sc.B }; });
+}
+function coPeriodScores(s) {
+  const n = Math.max(s.cfg.periods, s.period || 1, ...s.events.map(e => e.p));
+  const r = []; for (let p = 1; p <= n; p++) r.push({ p, A: 0, B: 0 });
+  for (const e of s.events) r[e.p - 1][e.team] += e.pts || 0;
+  return r;
+}
+function playerStats(s, team) {
+  const map = {};
+  for (const j of s.teams[team].players) map[j.n] = { j, pts: 0, c: {} };
+  for (const e of s.events) {
+    if (e.team !== team || e.n == null || e.n === '') continue;
+    const m = map[e.n] || (map[e.n] = { j: { n: e.n, nom: '?', prenom: '' }, pts: 0, c: {} });
+    m.pts += e.pts || 0; m.c[e.k] = (m.c[e.k] || 0) + 1;
+  }
+  return Object.values(map).sort((a, b) => (+a.j.n || 999) - (+b.j.n || 999));
+}
+function teamFouls(s, team, p) {
+  const tf = SPORTS[s.sport].teamFoul; if (!tf) return 0;
+  return s.events.filter(e => e.team === team && tf.keys.includes(e.k) && (SPORTS[s.sport].cumulFoul || e.p === p)).length;
+}
+function tmUsed(s, team) { return s.events.filter(e => e.team === team && e.k === 'tm').length; }
+function persoCount(s, team, n) {
+  const sp = SPORTS[s.sport]; if (!sp.persoKeys) return 0;
+  return s.events.filter(e => e.team === team && e.n == n && sp.persoKeys.includes(e.k)).length;
+}
+
+/* ---------- Duel : calculs à partir de l'historique des points ---------- */
+function setOver(a, b, c) { const m = Math.max(a, b); return (m >= c.pts && Math.abs(a - b) >= 2) || (c.max && m >= c.max); }
+function duelState(p, c, serveMode) {
+  const sets = []; let a = 0, b = 0, wa = 0, wb = 0, done = false;
+  const other = x => x === 'A' ? 'B' : 'A';
+  let setStart = p.first || 'A', srv = setStart;
+  for (const w of p.h) {
+    if (done) break;
+    w === 'A' ? a++ : b++;
+    if (serveMode === 'bad') srv = w;
+    if (setOver(a, b, c)) {
+      sets.push([a, b]); a > b ? wa++ : wb++; a = b = 0;
+      if (wa === c.sets || wb === c.sets) done = true;
+      setStart = serveMode === 'bad' ? w : other(setStart); srv = setStart;
+    } else if (serveMode === 'tt') {
+      const t = a + b; const idx = t < 20 ? Math.floor(t / 2) % 2 : t % 2;
+      srv = idx ? other(setStart) : setStart;
+    }
+  }
+  if (p.forfeit) { done = true; return { sets, cur: [a, b], wa, wb, done, winner: p.forfeit === 'A' ? 'B' : 'A', srv, forfeit: true }; }
+  return { sets, cur: [a, b], wa, wb, done, winner: done ? (wa > wb ? 'A' : 'B') : null, srv };
+}
+function duelTotals(s) {
+  const t = { A: 0, B: 0 }; const sp = SPORTS[s.sport];
+  for (const p of s.parties) { const st = duelState(p, s.cfg, sp.serve); if (st.winner) t[st.winner]++; }
+  return t;
+}
+
+/* ---------- Résultat ---------- */
+function result(s) {
+  const sp = SPORTS[s.sport];
+  const sc = sp.kind === 'co' ? coScore(s) : duelTotals(s);
+  let w = null; if (s.forfait) w = s.forfait === 'A' ? 'B' : 'A'; else if (sc.A > sc.B) w = 'A'; else if (sc.B > sc.A) w = 'B';
+  if (!s.forfait && s.tab && s.tab.A !== '' && s.tab.B !== '' && sc.A === sc.B) { if (+s.tab.A > +s.tab.B) w = 'A'; else if (+s.tab.B > +s.tab.A) w = 'B'; }
+  return { A: sc.A, B: sc.B, w };
+}
+const teamLabel = (s, t) => s.teams[t].nom || (t === 'A' ? 'Équipe A' : 'Équipe B');
+const STATUTS = { prep: 'En préparation', live: 'En cours', clos: 'Clôturée', valide: 'Validée prof' };
+
+/* ---------- Échange élève → prof ---------- */
+function toCode(obj) { const json = JSON.stringify(obj); return 'TMU1:' + btoa(unescape(encodeURIComponent(json))); }
+function fromCode(txt) {
+  txt = String(txt || '').trim();
+  if (txt.startsWith('{')) return JSON.parse(txt);
+  const m = txt.match(/TMU1:([A-Za-z0-9+/=\s]+)/); if (!m) throw new Error('Code non reconnu');
+  return JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/\s/g, '')))));
+}
+function fileName(s, ext) {
+  const clean = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24);
+  return `TablMark_${clean(SPORTS[s.sport].nom)}_${clean(teamLabel(s, 'A'))}-${clean(teamLabel(s, 'B'))}_${s.meta.date || ''}.${ext}`;
+}
+async function saveFile(name, data) {
+  try {
+    if (window.claude && claude.use) {
+      const d = await claude.use('downloads');
+      if (d) { await d.save({ filename: name, data }); return 'ok'; }
+    }
+  } catch (e) { if (e && e.code === 'declined') return 'declined'; }
+  try {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data])); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); return 'ok';
+  } catch (e) { return 'fail'; }
+}
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) {
+    try { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok; } catch (e2) { return false; }
+  }
+}
+
+/* ---------- Rendu de la feuille officielle (impression / consultation prof) ---------- */
+function sheetHTML(s) {
+  const sp = SPORTS[s.sport], r = result(s), m = s.meta;
+  const winTxt = r.w ? esc(teamLabel(s, r.w)) : 'Match nul';
+  let h = `<div class="sheet"><header class="sh-h"><div><div class="sh-brand">TablMarkUNSS</div><h2>Feuille de ${sp.kind === 'co' ? 'match' : 'rencontre'} — ${esc(sp.nom)}</h2></div>
+  <div class="sh-st">${esc(STATUTS[s.status] || '')}</div></header>
+  <table class="sh-meta"><tr><th>Compétition</th><td>${esc(m.comp)}</td><th>Niveau</th><td>${esc(m.niveau)}</td></tr>
+  <tr><th>Date</th><td>${esc(fmtDate(m.date))} ${esc(m.heure)}</td><th>Lieu</th><td>${esc(m.lieu)}</td></tr>
+  <tr><th>Catégorie</th><td>${esc(m.cat)} ${esc(m.sexe)}</td><th>N° match / poule</th><td>${esc(m.num)} ${m.poule ? '· ' + esc(m.poule) : ''}</td></tr></table>
+  <div class="sh-score"><div><b>A</b> ${esc(teamLabel(s, 'A'))}<small>${esc(s.teams.A.as)}</small></div><div class="sh-big">${r.A} – ${r.B}</div><div><b>B</b> ${esc(teamLabel(s, 'B'))}<small>${esc(s.teams.B.as)}</small></div></div>
+  <p class="sh-win">Vainqueur : <b>${winTxt}</b>${s.forfait ? ` (forfait ${esc(teamLabel(s, s.forfait))})` : ''}${s.tab && s.tab.A !== '' && s.tab.A != null ? ` · Départage : ${esc(s.tab.A)} – ${esc(s.tab.B)}` : ''}</p>`;
+  if (sp.kind === 'co') {
+    const ps = coPeriodScores(s);
+    h += `<table class="sh-t"><tr><th>Période</th>${ps.map(p => `<th>${esc(periodName(s, p.p))}</th>`).join('')}<th>Total</th></tr>
+    <tr><td>${esc(teamLabel(s, 'A'))}</td>${ps.map(p => `<td>${p.A}</td>`).join('')}<td><b>${r.A}</b></td></tr>
+    <tr><td>${esc(teamLabel(s, 'B'))}</td>${ps.map(p => `<td>${p.B}</td>`).join('')}<td><b>${r.B}</b></td></tr></table>`;
+    const cols = sp.acts.filter(a => !a[2]);
+    for (const t of ['A', 'B']) {
+      const st = playerStats(s, t), T = s.teams[t];
+      h += `<h3>Équipe ${t} — ${esc(teamLabel(s, t))}</h3><p class="sh-small">Responsable : ${esc(T.prof)} · Temps morts : ${tmUsed(s, t)}</p>
+      <table class="sh-t"><tr><th>N°</th><th>Nom Prénom</th><th>Licence</th><th>${sp.acts.some(a => a[2] > 1) ? 'Pts' : 'Buts'}</th>${cols.map(c => `<th>${esc(c[1])}</th>`).join('')}</tr>
+      ${st.map(x => `<tr><td>${esc(x.j.n)}${x.j.cap ? ' (C)' : ''}${x.j.gb ? ' GB' : ''}</td><td class="l">${esc(x.j.nom)} ${esc(x.j.prenom)}</td><td>${esc(x.j.lic)}</td><td>${x.pts || ''}</td>${cols.map(c => `<td>${x.c[c[0]] || ''}</td>`).join('')}</tr>`).join('')}</table>`;
+    }
+    const run = coRunning(s);
+    h += `<h3>Déroulé du match</h3><table class="sh-t sh-log"><tr><th>Période</th><th>Temps</th><th>Équipe</th><th>N°</th><th>Action</th><th>Score</th></tr>
+    ${s.events.map((e, i) => `<tr><td>${esc(periodName(s, e.p))}</td><td>${esc(e.t)}</td><td>${e.team}</td><td>${esc(e.n ?? '')}</td><td class="l">${esc(actOf(s, e.k)[1])}</td><td>${run[i].A}–${run[i].B}</td></tr>`).join('') || '<tr><td colspan="6">Aucun événement</td></tr>'}</table>`;
+  } else {
+    h += `<p class="sh-small">Format : sets de ${s.cfg.pts} points${s.cfg.max ? ` (plafond ${s.cfg.max})` : ''}, ${s.cfg.sets} sets gagnants.</p>
+    <table class="sh-t"><tr><th>Partie</th><th>${esc(teamLabel(s, 'A'))}</th><th>${esc(teamLabel(s, 'B'))}</th><th>Sets</th><th>Vainqueur</th></tr>
+    ${s.parties.map(p => { const st = duelState(p, s.cfg, sp.serve); return `<tr><td class="l">${esc(p.lab)}</td><td class="l">${esc(p.a)}</td><td class="l">${esc(p.b)}</td><td>${st.sets.map(x => x[0] + '-' + x[1]).join(' · ')}${!st.done && (st.cur[0] || st.cur[1]) ? ` · (${st.cur[0]}-${st.cur[1]})` : ''}${st.forfeit ? ' forfait' : ''}</td><td>${st.winner ? esc(st.winner === 'A' ? p.a || 'A' : p.b || 'B') : '—'}</td></tr>`; }).join('')}</table>`;
+    for (const t of ['A', 'B']) h += `<p class="sh-small"><b>${esc(teamLabel(s, t))}</b> — responsable : ${esc(s.teams[t].prof)}</p>`;
+  }
+  const roles = ROLES[sp.kind];
+  h += `<h3>Jeunes officiels</h3><table class="sh-t"><tr><th>Fonction</th><th>Nom Prénom</th><th>Établissement</th><th>Niveau JO</th></tr>
+  ${roles.map(([k, l]) => { const o = s.officiels[k] || {}; return o.nom ? `<tr><td class="l">${l}</td><td class="l">${esc(o.nom)}</td><td>${esc(o.etab)}</td><td>${esc(o.niv)}</td></tr>` : ''; }).join('')}</table>
+  <h3>Observations, réserves, incidents</h3><p class="sh-obs">${esc(s.obs || 'Néant').replace(/\n/g, '<br>')}</p>
+  ${s.profNote ? `<h3>Note de l’enseignant</h3><p class="sh-obs">${esc(s.profNote)}</p>` : ''}
+  <h3>Signatures</h3><div class="sh-sig">${SIGS.map(([k, l]) => `<div><span>${esc(l(s))}</span>${s.sig && s.sig[k] && /^data:image\/png;base64,/.test(s.sig[k]) ? `<img alt="" src="${s.sig[k]}">` : '<i></i>'}</div>`).join('')}</div>
+  <footer class="sh-f">Feuille n° ${esc(s.id)} · saisie TablMarkUNSS ${TMU_VERSION} · ${s.closedAt ? 'clôturée le ' + esc(new Date(s.closedAt).toLocaleString('fr-FR')) : 'non clôturée'}</footer></div>`;
+  return h;
+}
+const SIGS = [['arb', () => 'Arbitre / juge-arbitre'], ['capA', s => 'Capitaine ' + teamLabel(s, 'A')], ['capB', s => 'Capitaine ' + teamLabel(s, 'B')], ['table', () => 'Table de marque']];
+const SHEET_CSS = `.sheet{background:#fff;color:#111;font:13px/1.4 Barlow,Arial,sans-serif;padding:18px;max-width:900px;margin:auto}
+.sh-h{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:8px;margin-bottom:10px}
+.sh-brand{font:700 13px 'Barlow Condensed',Arial;letter-spacing:.02em;color:#c8102e}.sheet h2{margin:0;font:700 24px/1.1 'Barlow Condensed',Arial}
+.sheet h3{font:700 16px 'Barlow Condensed',Arial;margin:16px 0 6px;border-bottom:1px solid #999}
+.sh-st{border:1.5px solid #111;padding:2px 8px;font-weight:700;font-size:12px}
+.sh-t,.sh-meta{width:100%;border-collapse:collapse;margin:6px 0}.sh-t th,.sh-t td,.sh-meta th,.sh-meta td{border:1px solid #888;padding:3px 6px;text-align:center}
+.sh-meta th{background:#eee;text-align:left;width:16%}.sh-meta td{text-align:left}.sh-t th{background:#eee}.sh-t td.l{text-align:left}
+.sh-score{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin:10px 0;border:2px solid #111;padding:8px}
+.sh-score small{display:block;color:#555}.sh-score>div:last-child{text-align:right}.sh-big{font:700 40px 'Barlow Condensed',Arial}
+.sh-win{margin:4px 0}.sh-small{margin:4px 0;font-size:12px;color:#333}.sh-obs{border:1px solid #888;padding:6px;min-height:36px}
+.sh-sig{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.sh-sig div{border:1px solid #888;padding:4px;min-height:80px}
+.sh-sig span{font-size:11px;display:block}.sh-sig img{width:100%;height:56px;object-fit:contain}.sh-f{margin-top:14px;font-size:11px;color:#555}
+@media(max-width:600px){.sh-sig{grid-template-columns:1fr 1fr}.sh-big{font-size:30px}.sh-t{font-size:12px}}
+@media print{body *{visibility:hidden}#print,#print *{visibility:visible}#print{position:absolute;inset:0}.sheet{padding:0}}`;
+function standaloneSheet(s) {
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Feuille ${esc(SPORTS[s.sport].nom)}</title><style>body{margin:0;background:#fff}${SHEET_CSS}</style></head><body><div id="print">${sheetHTML(s)}</div><script>setTimeout(()=>{try{print()}catch(e){}},400)<\/script><script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
+</body></html>`;
+}
+function validSheet(o) {
+  return o && typeof o === 'object' && typeof o.id === 'string' && SPORTS[o.sport] && o.teams && o.teams.A && o.teams.B && o.meta && (Array.isArray(o.events) || Array.isArray(o.parties));
+}
+function store(key, val) { try { if (val === undefined) return JSON.parse(localStorage.getItem(key) || 'null'); localStorage.setItem(key, JSON.stringify(val)); return true; } catch (e) { return val === undefined ? null : false; } }
+
+{
+const $ = q => document.querySelector(q);
+const KEY = 'tmu_eleve';
+let DB = store(KEY) || { sheets: {}, cur: null };
+let storageOK = store(KEY, DB);
+let view = 'home', tab = 'log', party = 0, swap = false;
+const cur = () => DB.sheets[DB.cur];
+const save = () => { const s = cur(); if (s) s.updated = Date.now(); storageOK = store(KEY, DB); };
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+const get = (o, p) => p.split('.').reduce((x, k) => x == null ? x : x[k], o) ?? '';
+function setPath(o, p, v) { const ks = p.split('.'); let x = o; for (let i = 0; i < ks.length - 1; i++) x = x[ks[i]] ?? (x[ks[i]] = {}); x[ks.at(-1)] = v; }
+let tT; function toast(m, warn) { const t = $('#toast'); t.textContent = m; t.className = warn ? 'warn' : ''; t.style.display = 'block'; clearTimeout(tT); tT = setTimeout(() => t.style.display = 'none', warn ? 5200 : 2600); if (warn) try { navigator.vibrate && navigator.vibrate(200) } catch (e) { } }
+const ov = h => { $('#ov').innerHTML = h ? `<div class="ov" data-act="ovbg"><div class="dlg" role="dialog" aria-modal="true">${h}</div></div>` : ''; const i = $('#ov input'); if (i) i.focus(); };
+function ask(msg, okLabel, fn) { pending = fn; ov(`<h3>${esc(msg)}</h3><div class="row" style="justify-content:flex-end;margin-top:14px"><button data-act="close">Annuler</button><button class="btn-p" data-act="confirm">${esc(okLabel)}</button></div>`); }
+let pending = null;
+
+function cfgFor(sport) {
+  const sp = SPORTS[sport];
+  return sp.kind === 'co' ? { periods: sp.periods, dur: sp.dur, ot: sp.ot, tm: sp.tm } : { pts: sp.pts, max: sp.max, sets: sp.sets, format: 'Match simple' };
+}
+function mkParties(sport, fmt) { return (SPORTS[sport].formats[fmt] || ['Simple']).map(l => ({ lab: l, a: '', b: '', h: [], first: 'A', forfeit: '' })); }
+function newSheet() {
+  const sport = 'handball';
+  const s = { id: uid(), v: 1, sport, status: 'prep', created: Date.now(), updated: Date.now(),
+    meta: { comp: '', niveau: 'District', date: today(), heure: '', lieu: '', cat: 'Minimes', sexe: 'Mixte', num: '', poule: '' },
+    teams: { A: { nom: '', as: '', prof: '', players: [] }, B: { nom: '', as: '', prof: '', players: [] } },
+    officiels: {}, cfg: cfgFor(sport), events: [], period: 1, clock: { rem: SPORTS[sport].dur * 60, run: false, at: 0 },
+    parties: [], obs: '', sig: {}, tab: { A: '', B: '' }, forfait: '' };
+  DB.sheets[s.id] = s; DB.cur = s.id; save(); go('setup');
+}
+function setSport(s, sport) {
+  s.sport = sport; s.cfg = cfgFor(sport); s.period = 1; s.clock = { rem: s.cfg.dur ? s.cfg.dur * 60 : 0, run: false, at: 0 };
+  s.parties = SPORTS[sport].kind === 'du' ? mkParties(sport, s.cfg.format) : [];
+}
+const pDur = (s, p) => (p <= s.cfg.periods ? +s.cfg.dur : +(s.cfg.ot || s.cfg.dur)) * 60;
+const remain = s => s.clock.run ? s.clock.rem - (Date.now() - s.clock.at) / 1000 : s.clock.rem;
+const played = s => s.events.length || s.parties.some(p => p.h.length);
+
+function go(v) { view = v; if (v === 'home') DB.cur = DB.cur; render(); scrollTo(0, 0); }
+function nav() {
+  const s = cur(); if (view === 'home' || !s) { $('#nav').innerHTML = ''; return; }
+  const items = [['setup', 'Préparation'], ['live', 'Direct'], ['end', 'Fin & envoi'], ['sheet', 'Feuille']];
+  $('#nav').innerHTML = items.map(([k, l]) => `<button data-act="go" data-v="${k}" class="${view === k ? 'on' : ''}">${l}</button>`).join('') + `<button data-act="home">Mes feuilles</button>`;
+}
+function render() {
+  nav(); const s = cur();
+  if (view !== 'home' && !s) view = 'home';
+  const warn = storageOK ? '' : `<div class="storage">Sauvegarde automatique indisponible dans ce navigateur : ne fermez pas la page avant d’avoir envoyé la feuille.</div>`;
+  const V = { home: vHome, setup: vSetup, live: s && SPORTS[s.sport].kind === 'du' ? vDuel : vLive, end: vEnd, sheet: vSheet }[view];
+  $('#app').innerHTML = warn + V(s);
+  if (view === 'end') initSigs(s);
+  tick();
+}
+
+/* ---------- Accueil ---------- */
+function vHome() {
+  const list = Object.values(DB.sheets).sort((a, b) => b.updated - a.updated);
+  return `<section class="hero"><div><h1>La table de marque, en direct</h1>
+  <p class="lead">Remplis la feuille de match UNSS pendant la rencontre : chrono, score, fautes, cartons, temps morts, sets. À la fin, signe et envoie la feuille à ton professeur.</p>
+  <button class="btn-p" data-act="new" style="min-height:54px;font-size:18px">+ Nouvelle feuille de match</button></div>
+  <div class="mini" aria-hidden="true"><div>12</div><div class="c">18:42</div><div>9</div></div></section>
+  <h2>Mes feuilles</h2>${list.length ? `<div class="hist">${list.map(s => { const r = result(s); return `<div class="hcard" style="border-left-color:${s.status === 'clos' ? 'var(--ink)' : 'var(--A)'}">
+  <div><div><b>${esc(SPORTS[s.sport].nom)}</b> · ${esc(fmtDate(s.meta.date))} <span class="tag ${s.status}">${STATUTS[s.status]}</span></div>
+  <div><span class="dotA"></span>${esc(teamLabel(s, 'A'))} <span class="muted">contre</span> <span class="dotB"></span>${esc(teamLabel(s, 'B'))}</div>
+  <div class="row" style="margin-top:6px"><button data-act="open" data-id="${s.id}">Ouvrir</button><button class="btn-d" data-act="del" data-id="${s.id}">Supprimer</button></div></div>
+  <div class="sc">${r.A} – ${r.B}</div></div>`; }).join('')}</div>` : `<div class="empty">Aucune feuille pour l’instant. Crée la première avant le coup d’envoi.</div>`}`;
+}
+
+/* ---------- Préparation ---------- */
+function vSetup(s) {
+  const sp = SPORTS[s.sport], lock = played(s);
+  const inp = (p, l, t = 'text', x = '') => `<label class="f"><span>${l}</span><input type="${t}" data-bind="${p}" value="${esc(get(s, p))}" ${x}></label>`;
+  const sel = (p, l, o, x = '') => `<label class="f"><span>${l}</span><select data-bind="${p}" ${x}>${o.map(v => `<option ${String(v) === String(get(s, p)) ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>`;
+  const gb = ['handball', 'hand4', 'futsal', 'football'].includes(s.sport);
+  let h = `<h1>Préparer la feuille</h1><p class="lead">Complète avec les informations de la convocation. Tout est enregistré automatiquement.</p>
+  <div class="card"><h3>Activité</h3>${lock ? '<p class="small muted">Le match a commencé : l’activité ne peut plus être changée.</p>' : ''}
+  <div class="sports">${Object.entries(SPORTS).map(([k, v]) => `<button data-act="sport" data-v="${k}" class="${k === s.sport ? 'on' : ''}" ${lock ? 'disabled' : ''}>${v.nom}<small>${v.kind === 'co' ? 'collectif' : 'duel'}</small></button>`).join('')}</div></div>
+  <div class="card"><h3>Rencontre</h3><div class="fields">${inp('meta.comp', 'Compétition')}${sel('meta.niveau', 'Niveau', NIVEAUX)}${inp('meta.date', 'Date', 'date')}${inp('meta.heure', 'Heure', 'time')}${inp('meta.lieu', 'Lieu / gymnase')}
+  ${sel('meta.cat', 'Catégorie', CATS)}${sel('meta.sexe', 'Sexe', SEXES)}${inp('meta.poule', 'Poule / tour')}${inp('meta.num', 'N° de match')}</div></div>
+  <div class="card"><h3>Règlement appliqué</h3><div class="fields">`;
+  if (sp.kind === 'co') h += `${inp('cfg.periods', 'Nombre de périodes ('+sp.pn.toLowerCase()+')', 'number', 'min="1" max="6" data-num')}${inp('cfg.dur', 'Durée (min)', 'number', 'min="0" max="60" data-num')}${inp('cfg.ot', 'Prolongation (min)', 'number', 'min="0" max="20" data-num')}${inp('cfg.tm', 'Temps morts par équipe', 'number', 'min="0" max="6" data-num')}`;
+  else h += `${sel('cfg.format', 'Format', Object.keys(sp.formats), lock ? 'disabled' : 'data-format')}${inp('cfg.pts', 'Points par set', 'number', 'min="5" max="30" data-num')}${inp('cfg.max', 'Plafond (0 = aucun)', 'number', 'min="0" max="40" data-num')}${inp('cfg.sets', 'Sets gagnants', 'number', 'min="1" max="4" data-num')}`;
+  h += `</div><p class="small muted">Valeurs par défaut indicatives : adapte-les au règlement UNSS de la compétition (catégorie, format court, poule).</p></div><div class="grid2">`;
+  for (const t of ['A', 'B']) {
+    const T = s.teams[t];
+    h += `<div class="card" style="border-top:6px solid var(--${t})"><h3 class="team-h">Équipe ${t}</h3><div class="fields">${inp(`teams.${t}.nom`, 'Établissement / équipe')}${inp(`teams.${t}.as`, 'AS (nom ou n°)')}${inp(`teams.${t}.prof`, 'Professeur responsable')}</div>`;
+    if (sp.kind === 'co') h += `<h3 style="margin-top:14px">Joueurs (${T.players.length}/${sp.maxJ})</h3>
+    ${T.players.map((j, i) => `<div class="pr"><input class="n" inputmode="numeric" aria-label="Numéro" placeholder="N°" data-bind="teams.${t}.players.${i}.n" value="${esc(j.n)}"><input placeholder="Nom" aria-label="Nom" data-bind="teams.${t}.players.${i}.nom" value="${esc(j.nom)}"><input placeholder="Prénom" aria-label="Prénom" data-bind="teams.${t}.players.${i}.prenom" value="${esc(j.prenom)}"><input class="lic" placeholder="Licence" aria-label="Licence" data-bind="teams.${t}.players.${i}.lic" value="${esc(j.lic)}"><label class="ck"><input type="checkbox" data-bind="teams.${t}.players.${i}.cap" ${j.cap ? 'checked' : ''}>C</label>${gb ? `<label class="ck"><input type="checkbox" data-bind="teams.${t}.players.${i}.gb" ${j.gb ? 'checked' : ''}>GB</label>` : '<span></span>'}<button data-act="delp" data-t="${t}" data-i="${i}" aria-label="Retirer">×</button></div>`).join('')}
+    <div class="row"><button data-act="addp" data-t="${t}">+ Joueur</button><button data-act="paste" data-t="${t}">Coller une liste</button></div>`;
+    h += `</div>`;
+  }
+  h += `</div>`;
+  if (sp.kind === 'du') h += `<div class="card"><h3>Parties</h3><p class="small muted">Une ligne par partie : intitulé, joueur(s) de l’équipe A, joueur(s) de l’équipe B.</p>
+  ${s.parties.map((p, i) => `<div class="party"><input data-bind="parties.${i}.lab" value="${esc(p.lab)}" aria-label="Partie"><input placeholder="Joueur(s) ${esc(teamLabel(s, 'A'))}" data-bind="parties.${i}.a" value="${esc(p.a)}"><input placeholder="Joueur(s) ${esc(teamLabel(s, 'B'))}" data-bind="parties.${i}.b" value="${esc(p.b)}"><button data-act="delparty" data-i="${i}" ${p.h.length ? 'disabled' : ''} aria-label="Retirer">×</button></div>`).join('')}
+  <button data-act="addparty">+ Partie</button></div>`;
+  h += `<div class="card"><h3>Jeunes officiels</h3>${ROLES[sp.kind].map(([k, l]) => `<div class="off"><span>${l}</span><input placeholder="Nom Prénom" data-bind="officiels.${k}.nom" value="${esc(get(s, `officiels.${k}.nom`))}"><input placeholder="Établissement" data-bind="officiels.${k}.etab" value="${esc(get(s, `officiels.${k}.etab`))}"><select data-bind="officiels.${k}.niv" aria-label="Niveau JO">${NIV_JO.map(n => `<option value="${n}" ${n === get(s, `officiels.${k}.niv`) ? 'selected' : ''}>${n || 'Niveau JO'}</option>`).join('')}</select></div>`).join('')}</div>
+  <div class="row" style="justify-content:flex-end"><button class="btn-p" data-act="go" data-v="live" style="min-height:54px;font-size:18px">Passer au direct →</button></div>`;
+  return h;
+}
+
+/* ---------- Direct : sports collectifs ---------- */
+function alertsCo(s) {
+  const sp = SPORTS[s.sport], out = [];
+  for (const t of ['A', 'B']) {
+    if (sp.teamFoul && teamFouls(s, t, s.period) >= sp.teamFoul.limit) out.push(`${teamLabel(s, t)} — ${sp.teamFoul.msg}`);
+    if (sp.persoMax) for (const j of playerStats(s, t)) { const c = persoCount(s, t, j.j.n); if (c >= sp.persoMax) out.push(`${teamLabel(s, t)} — N° ${j.j.n} : ${c} fautes, doit quitter le terrain.`); else if (c === sp.persoMax - 1) out.push(`${teamLabel(s, t)} — N° ${j.j.n} : ${c} fautes (attention).`); }
+  }
+  if (sp.target) { const sc = coScore(s); for (const t of ['A', 'B']) if (sc[t] >= sp.target) out.push(`${teamLabel(s, t)} a atteint ${sp.target} points : fin du match.`); }
+  return out;
+}
+function vLive(s) {
+  const sp = SPORTS[s.sport], sc = coScore(s), order = swap ? ['B', 'A'] : ['A', 'B'];
+  const side = t => { const tf = sp.teamFoul ? teamFouls(s, t, s.period) : 0;
+    return `<div class="tm tm${t}"><div class="tn">${esc(teamLabel(s, t))}</div><div class="ts" id="sc${t}">${sc[t]}</div><div class="pills">${sp.teamFoul ? `<span class="${tf >= sp.teamFoul.limit ? 'hot' : ''}">Fautes éq. ${tf}</span>` : ''}${+s.cfg.tm ? `<span class="${tmUsed(s, t) >= s.cfg.tm ? 'hot' : ''}">TM ${tmUsed(s, t)}/${s.cfg.tm}</span>` : ''}</div></div>`; };
+  const clk = `<div class="clk"><div class="per"><button data-act="per" data-v="-1" aria-label="Période précédente">‹</button><span>${esc(periodName(s, s.period))}</span><button data-act="per" data-v="1" aria-label="Période suivante">›</button></div>
+  <div id="clock" class="time ${s.clock.run ? 'run' : ''}">${fmtT(remain(s))}</div>
+  <div class="cbtn"><button data-act="adj" data-v="-10">−10 s</button><button class="play" data-act="clock" aria-label="${s.clock.run ? 'Arrêter' : 'Démarrer'} le chrono">${s.clock.run ? '❚❚' : '▶'}</button><button data-act="adj" data-v="10">+10 s</button></div></div>`;
+  const pad = t => `<div class="pad pad${t}"><h4>${esc(teamLabel(s, t))}</h4><div class="acts">${sp.acts.map(a => `<button class="act c-${a[3] || 'p'}" data-act="pick" data-t="${t}" data-k="${a[0]}">${a[1]}</button>`).join('')}${+s.cfg.tm ? `<button class="act c-tm" data-act="rec" data-t="${t}" data-k="tm" data-n="">Temps mort</button>` : ''}</div></div>`;
+  const al = alertsCo(s);
+  let h = `<div class="board">${side(order[0])}${clk}${side(order[1])}</div>${al.length ? `<div class="alerts">${al.map(a => `<div class="alert">${esc(a)}</div>`).join('')}</div>` : ''}
+  <div class="pads">${pad(order[0])}${pad(order[1])}</div>
+  <div class="tabs"><button data-act="tab" data-v="log" class="${tab === 'log' ? 'on' : ''}">Journal (${s.events.length})</button><button data-act="tab" data-v="pl" class="${tab === 'pl' ? 'on' : ''}">Joueurs</button></div>`;
+  if (tab === 'log') { const run = coRunning(s);
+    h += s.events.length ? `<ul class="log">${s.events.map((e, i) => ({ e, i })).reverse().map(({ e, i }) => { const j = s.teams[e.team].players.find(x => x.n == e.n && e.n !== '');
+      return `<li><span class="lt">${esc(periodName(s, e.p).replace(/^(\S)\S*\s?(\S*)\s?/, '$1$2 '))}${esc(e.t)}</span><b class="t${e.team}">${e.team}</b><span>${e.n !== '' && e.n != null ? `<b>N°${esc(e.n)}</b> ${esc(j ? j.nom : '')} · ` : ''}${esc(actOf(s, e.k)[1])}</span><span class="ls">${run[i].A}–${run[i].B}</span><button data-act="dele" data-id="${e.id}" aria-label="Supprimer">×</button></li>`; }).join('')}</ul>` : `<div class="empty">Les actions apparaîtront ici. Touche une action puis le numéro du joueur.</div>`;
+  } else h += `<div class="grid2">${['A', 'B'].map(t => `<div class="card scroll"><h3>${esc(teamLabel(s, t))}</h3><table class="list"><thead><tr><th>N°</th><th>Nom</th><th>Pts</th>${sp.acts.filter(a => !a[2]).map(a => `<th>${esc(a[1])}</th>`).join('')}</tr></thead><tbody>${playerStats(s, t).map(x => `<tr><td>${esc(x.j.n)}</td><td>${esc(x.j.nom)}</td><td>${x.pts || ''}</td>${sp.acts.filter(a => !a[2]).map(a => `<td>${x.c[a[0]] || ''}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`).join('')}</div>`;
+  h += `<div class="bar"><button data-act="undo" ${s.events.length ? '' : 'disabled'}>↶ Annuler la dernière action</button><button data-act="swap">⇄ Côtés</button><button class="btn-p" data-act="go" data-v="end">Fin du match</button></div>`;
+  return h;
+}
+function openPicker(t, k) {
+  const s = cur(), sp = SPORTS[s.sport], a = actOf(s, k);
+  const pl = s.teams[t].players.filter(j => String(j.n).trim() !== '').sort((x, y) => (+x.n || 999) - (+y.n || 999));
+  ov(`<h3>${esc(a[1])} — ${esc(teamLabel(s, t))}</h3><p class="small muted">Choisis le joueur.</p><div class="chips">${pl.map(j => { const pc = persoCount(s, t, j.n);
+    return `<button class="chip ${sp.persoMax && pc >= sp.persoMax ? 'out' : ''}" data-act="rec" data-t="${t}" data-k="${k}" data-n="${esc(j.n)}"><b>${esc(j.n)}</b><small>${esc(j.nom || j.prenom)}</small>${sp.persoKeys ? `<i>${pc} F</i>` : ''}</button>`; }).join('')}</div>
+  <div class="row"><input id="pkn" inputmode="numeric" placeholder="Autre numéro" style="flex:1;min-width:120px"><button data-act="recn" data-t="${t}" data-k="${k}">Valider</button><button data-act="rec" data-t="${t}" data-k="${k}" data-n="">Sans numéro</button></div>
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button data-act="close">Annuler</button></div>`);
+}
+function record(t, k, n) {
+  const s = cur(), sp = SPORTS[s.sport], a = actOf(s, k);
+  if (s.status === 'clos') return toast('Feuille clôturée : rouvre-la pour modifier.', true);
+  const el = pDur(s, s.period) - Math.max(0, remain(s));
+  const e = { id: uid(), p: s.period, t: fmtT(el), team: t, n: n === '' ? '' : String(n), k, pts: a[2] || 0 };
+  s.events.push(e); if (s.status === 'prep') s.status = 'live';
+  save(); ov(''); render();
+  const f = document.getElementById('sc' + t); if (f && e.pts) f.classList.add('flash');
+  const who = n !== '' ? `N° ${n}` : '';
+  if (k === 'tm') { if (s.clock.run) { s.clock.rem = Math.max(0, remain(s)); s.clock.run = false; save(); render(); } toast(`Temps mort ${teamLabel(s, t)} — chrono arrêté${tmUsed(s, t) > s.cfg.tm ? ' (dépassement du nombre autorisé !)' : ''}`, tmUsed(s, t) > s.cfg.tm); return; }
+  if (sp.persoMax && sp.persoKeys.includes(k) && n !== '' && persoCount(s, t, n) >= sp.persoMax) return toast(`${who} : ${sp.persoMax}e faute — le joueur doit sortir.`, true);
+  if (sp.max2m && k === '2m' && n !== '' && s.events.filter(x => x.team === t && x.n == n && x.k === '2m').length >= sp.max2m) return toast(`${who} : 3e exclusion de 2 min = disqualification.`, true);
+  if (k === 'cj' && n !== '' && s.events.filter(x => x.team === t && x.n == n && x.k === 'cj').length >= 2) return toast(`${who} : 2e carton jaune = carton rouge.`, true);
+  if (['cr', 'dq', 'fd'].includes(k)) return toast(`${who} exclu(e) définitivement : à signaler dans les observations.`, true);
+  if (sp.teamFoul && sp.teamFoul.keys.includes(k) && teamFouls(s, t, s.period) === sp.teamFoul.limit) return toast(sp.teamFoul.msg, true);
+  if (sp.target && coScore(s)[t] >= sp.target) return toast(`${sp.target} points atteints : victoire ${teamLabel(s, t)}.`, true);
+  toast(`${a[1]} ${teamLabel(s, t)} ${who} · ${e.t}`);
+}
+
+/* ---------- Direct : duels ---------- */
+function vDuel(s) {
+  const sp = SPORTS[s.sport]; if (!s.parties.length) return `<div class="empty">Aucune partie. Ajoute-en dans Préparation.</div>`;
+  party = Math.min(party, s.parties.length - 1);
+  const p = s.parties[party], st = duelState(p, s.cfg, sp.serve), tot = duelTotals(s), order = swap ? ['B', 'A'] : ['A', 'B'];
+  const nm = t => t === 'A' ? (p.a || teamLabel(s, 'A')) : (p.b || teamLabel(s, 'B'));
+  const zone = t => `<button class="zone z${t}" data-act="pt" data-w="${t}" ${st.done || s.status === 'clos' ? 'disabled' : ''} aria-label="Point pour ${esc(nm(t))}">${st.srv === t && !st.done ? '<span class="srv" title="Au service"></span>' : ''}<span class="zn">${esc(nm(t))}</span><span class="zs" id="sc${t}">${st.cur[t === 'A' ? 0 : 1]}</span><span class="zw">Sets ${t === 'A' ? st.wa : st.wb}</span></button>`;
+  let h = s.parties.length > 1 ? `<div class="du-tot"><span class="dotA"></span>${esc(teamLabel(s, 'A'))} ${tot.A} – ${tot.B} ${esc(teamLabel(s, 'B'))}<span class="dotB" style="margin:0 0 0 6px"></span></div>
+  <div class="du-parts">${s.parties.map((q, i) => { const w = duelState(q, s.cfg, sp.serve).winner; return `<button data-act="party" data-i="${i}" class="${i === party ? 'on' : ''}">${esc(q.lab)}${w ? ' ✓' + w : ''}</button>`; }).join('')}</div>` : '';
+  h += `<h2>${esc(p.lab)} <span class="muted small">· set ${st.sets.length + (st.done ? 0 : 1)} · ${s.cfg.pts} pts, ${s.cfg.sets} sets gagnants</span></h2>
+  <div class="duel">${zone(order[0])}${zone(order[1])}</div>
+  <div class="sets">${st.sets.map((x, i) => `<span>Set ${i + 1} : ${x[0]}-${x[1]}</span>`).join('') || '<span class="muted small" style="border:0;background:none;font:inherit">Touchez la zone du joueur qui gagne l’échange.</span>'}</div>
+  ${st.done ? `<div class="banner">${esc(nm(st.winner))} gagne la partie${st.forfeit ? ' (forfait / abandon)' : ''} ${st.wa}–${st.wb}</div>` : ''}
+  <div class="card" style="margin-top:12px"><div class="row">
+  ${!p.h.length ? `<span class="small muted">Premier serveur :</span><button data-act="first" data-v="A" class="${p.first === 'A' ? 'btn-p' : ''}">${esc(nm('A'))}</button><button data-act="first" data-v="B" class="${p.first === 'B' ? 'btn-p' : ''}">${esc(nm('B'))}</button>` : ''}
+  <button data-act="ff" ${st.done && !p.forfeit ? 'disabled' : ''}>${p.forfeit ? 'Annuler le forfait' : 'Forfait / abandon'}</button>
+  ${party < s.parties.length - 1 ? `<button data-act="party" data-i="${party + 1}">Partie suivante →</button>` : ''}</div></div>
+  <div class="bar"><button data-act="undopt" ${p.h.length ? '' : 'disabled'}>↶ Annuler le point</button><button data-act="swap">⇄ Côtés</button><button class="btn-p" data-act="go" data-v="end">Fin de la rencontre</button></div>`;
+  return h;
+}
+function point(w) {
+  const s = cur(), sp = SPORTS[s.sport], p = s.parties[party]; const before = duelState(p, s.cfg, sp.serve);
+  if (before.done || s.status === 'clos') return;
+  p.h.push(w); if (s.status === 'prep') s.status = 'live'; save(); render();
+  const st = duelState(p, s.cfg, sp.serve); document.getElementById('sc' + w)?.classList.add('flash');
+  const nm = t => t === 'A' ? (p.a || teamLabel(s, 'A')) : (p.b || teamLabel(s, 'B'));
+  if (st.done) return toast(`Partie terminée : ${nm(st.winner)} gagne ${st.wa}–${st.wb}.`, true);
+  if (st.sets.length > before.sets.length) { const x = st.sets.at(-1); return toast(`Set gagné par ${nm(x[0] > x[1] ? 'A' : 'B')} (${x[0]}-${x[1]}). Changement de côté.`, true); }
+  const thr = sp.serve === 'tt' ? 5 : 11, decisive = st.wa === s.cfg.sets - 1 && st.wb === s.cfg.sets - 1;
+  const c = st.cur, mine = c[w === 'A' ? 0 : 1], oth = c[w === 'A' ? 1 : 0];
+  if (decisive && mine === thr && oth < thr) return toast(`${thr} points dans le set décisif : changement de côté.`, true);
+  if (sp.serve === 'bad' && mine === 11 && oth < 11) return toast('11 points : pause de 60 secondes maximum.');
+}
+
+/* ---------- Fin & envoi ---------- */
+function vEnd(s) {
+  const sp = SPORTS[s.sport], r = result(s), clos = s.status === 'clos';
+  let h = `<h1>${clos ? 'Feuille clôturée' : 'Fin de la rencontre'}</h1><div class="card res"><div><div class="nm"><span class="dotA"></span>${esc(teamLabel(s, 'A'))}</div></div><div class="big">${r.A} – ${r.B}</div><div><div class="nm">${esc(teamLabel(s, 'B'))}<span class="dotB" style="margin:0 0 0 6px"></span></div></div></div>
+  <p class="lead">Vainqueur : <b>${r.w ? esc(teamLabel(s, r.w)) : 'match nul'}</b></p>`;
+  if (clos) h += `<div class="card" style="border:2px solid var(--ink)"><h3>Envoyer au professeur</h3><p class="small">Télécharge le fichier et dépose-le dans l’espace demandé par ton professeur (ENT, Mes Apps EPS…), ou copie le code et envoie-le-lui.</p>
+  <div class="row"><button class="btn-p" data-act="dl">Télécharger le fichier</button><button data-act="copy">Copier le code</button><button data-act="dlhtml">Feuille imprimable</button><button data-act="print">Imprimer</button></div>
+  <details style="margin-top:10px"><summary class="small">Afficher le code</summary><textarea readonly id="code" style="margin-top:8px;font-size:12px">${esc(toCode(s))}</textarea></details>
+  <div class="row" style="margin-top:12px"><button class="btn-d" data-act="reopen">Rouvrir pour corriger</button></div></div>`;
+  h += `<fieldset class="card" ${clos ? 'disabled' : ''} style="border:1px solid var(--line)"><h3>Résultat officiel</h3><div class="fields">
+  <label class="f"><span>Forfait</span><select data-bind="forfait"><option value="">Aucun</option><option value="A" ${s.forfait === 'A' ? 'selected' : ''}>Forfait ${esc(teamLabel(s, 'A'))}</option><option value="B" ${s.forfait === 'B' ? 'selected' : ''}>Forfait ${esc(teamLabel(s, 'B'))}</option></select></label>
+  ${sp.kind === 'co' ? `<label class="f"><span>Départage ${esc(teamLabel(s, 'A'))} (tirs au but, jets de 7 m…)</span><input inputmode="numeric" data-bind="tab.A" value="${esc(s.tab.A)}"></label><label class="f"><span>Départage ${esc(teamLabel(s, 'B'))}</span><input inputmode="numeric" data-bind="tab.B" value="${esc(s.tab.B)}"></label>` : ''}</div>
+  <label class="f" style="margin-top:10px"><span>Observations, réserves, incidents, blessures</span><textarea data-bind="obs">${esc(s.obs)}</textarea></label>
+  <h3 style="margin-top:14px">Signatures</h3><div class="sigs">${SIGS.map(([k, l]) => `<div class="sig"><div class="row"><span class="small"><b>${esc(l(s))}</b></span><button data-act="clrsig" data-k="${k}">Effacer</button></div><canvas data-sig="${k}" width="600" height="220" aria-label="Signature ${esc(l(s))}"></canvas></div>`).join('')}</div></fieldset>`;
+  if (!clos) h += `<div class="row" style="justify-content:flex-end"><button data-act="go" data-v="live">← Retour au direct</button><button class="btn-p" data-act="close-sheet" style="min-height:54px;font-size:18px">Clôturer la feuille</button></div>`;
+  return h;
+}
+function initSigs(s) {
+  for (const c of document.querySelectorAll('canvas[data-sig]')) {
+    const k = c.dataset.sig, x = c.getContext('2d'); x.lineWidth = 4; x.lineCap = 'round'; x.strokeStyle = '#111';
+    if (s.sig[k]) { const im = new Image(); im.onload = () => x.drawImage(im, 0, 0, c.width, c.height); im.src = s.sig[k]; }
+    if (s.status === 'clos') continue;
+    let down = false; const P = e => { const r = c.getBoundingClientRect(); return [(e.clientX - r.left) * c.width / r.width, (e.clientY - r.top) * c.height / r.height]; };
+    c.onpointerdown = e => { down = true; c.setPointerCapture(e.pointerId); x.beginPath(); x.moveTo(...P(e)); };
+    c.onpointermove = e => { if (!down) return; x.lineTo(...P(e)); x.stroke(); };
+    c.onpointerup = c.onpointercancel = () => { if (!down) return; down = false; const sm = document.createElement('canvas'); sm.width = 300; sm.height = 110; sm.getContext('2d').drawImage(c, 0, 0, 300, 110); s.sig[k] = sm.toDataURL('image/png'); save(); };
+  }
+}
+function vSheet(s) { return `<div class="row" style="justify-content:flex-end;margin-bottom:10px"><button data-act="dlhtml">Télécharger (.html)</button><button data-act="print">Imprimer</button></div><div style="border-radius:12px;overflow:hidden">${sheetHTML(s)}</div>`; }
+
+/* ---------- Chrono ---------- */
+function tick() { const s = cur(); const el = document.getElementById('clock'); if (!s || !el) return; const r = remain(s); el.textContent = fmtT(r);
+  if (s.clock.run && r <= 0) { s.clock.run = false; s.clock.rem = 0; save(); render(); toast(`Fin : ${periodName(s, s.period)}`, true); } }
+setInterval(tick, 250);
+
+/* ---------- Événements ---------- */
+function parseList(txt) {
+  return txt.split(/\n/).map(l => l.trim()).filter(Boolean).map(l => { const m = l.match(/^(\d{1,3})?[\s;,.\-]*(.*)$/); let tk = m[2].split(/[\s;,\t]+/).filter(Boolean);
+    const li = tk.findIndex(x => /^\d{5,}$/.test(x)); const lic = li >= 0 ? tk.splice(li, 1)[0] : '';
+    return { n: m[1] || '', nom: (tk[0] || '').toUpperCase(), prenom: tk.slice(1).join(' '), lic, cap: false, gb: false }; });
+}
+document.addEventListener('input', e => {
+  const b = e.target.dataset && e.target.dataset.bind; if (!b) return; const s = cur(); if (!s) return;
+  let v = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if (e.target.hasAttribute('data-num')) v = v === '' ? '' : +v;
+  setPath(s, b, v);
+  if (b === 'cfg.dur' && !played(s) && s.period === 1) s.clock = { rem: (+v || 0) * 60, run: false, at: 0 };
+  if (e.target.hasAttribute('data-format')) { s.parties = mkParties(s.sport, v); party = 0; save(); render(); return; }
+  save();
+  if (/^teams\.[AB]\.nom$|^forfait$|^tab\./.test(b) && e.type === 'input' && e.target.tagName === 'SELECT') render();
+});
+document.addEventListener('change', e => { const b = e.target.dataset && e.target.dataset.bind; if (b && /^(forfait|tab\.)/.test(b)) render(); });
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-act]'); if (!el) return; const a = el.dataset.act, s = cur();
+  if (a === 'ovbg') { if (e.target === el) ov(''); return; }
+  const d = el.dataset;
+  switch (a) {
+    case 'home': go('home'); break;
+    case 'new': newSheet(); break;
+    case 'open': DB.cur = d.id; save(); { const t = cur(); go(t.status === 'prep' ? 'setup' : t.status === 'clos' ? 'end' : 'live'); } break;
+    case 'del': ask('Supprimer définitivement cette feuille ?', 'Supprimer', () => { delete DB.sheets[d.id]; if (DB.cur === d.id) DB.cur = null; save(); render(); }); break;
+    case 'confirm': { const f = pending; pending = null; ov(''); f && f(); } break;
+    case 'close': ov(''); break;
+    case 'go': go(d.v); break;
+    case 'sport': setSport(s, d.v); save(); render(); break;
+    case 'addp': if (s.teams[d.t].players.length >= SPORTS[s.sport].maxJ) toast(`Maximum ${SPORTS[s.sport].maxJ} joueurs inscrits.`, true); s.teams[d.t].players.push({ n: '', nom: '', prenom: '', lic: '', cap: false, gb: false }); save(); render(); break;
+    case 'delp': s.teams[d.t].players.splice(+d.i, 1); save(); render(); break;
+    case 'paste': ov(`<h3>Coller la liste — équipe ${d.t}</h3><p class="small muted">Une ligne par joueur : numéro, nom, prénom, licence (facultative). Exemple : 7 MARTIN Léa 1234567</p><textarea id="plist" style="min-height:180px"></textarea><div class="row" style="justify-content:flex-end;margin-top:10px"><button data-act="close">Annuler</button><button class="btn-p" data-act="dopaste" data-t="${d.t}">Ajouter</button></div>`); break;
+    case 'dopaste': { const L = parseList($('#plist').value); s.teams[d.t].players.push(...L); save(); ov(''); render(); toast(`${L.length} joueur(s) ajouté(s)`); } break;
+    case 'addparty': s.parties.push({ lab: 'Partie ' + (s.parties.length + 1), a: '', b: '', h: [], first: 'A', forfeit: '' }); save(); render(); break;
+    case 'delparty': s.parties.splice(+d.i, 1); save(); render(); break;
+    case 'clock': if (s.status === 'clos') return toast('Feuille clôturée.', true); if (s.clock.run) { s.clock.rem = Math.max(0, remain(s)); s.clock.run = false; } else { if (s.clock.rem <= 0) return toast('Période terminée : passe à la suivante avec ›', true); s.clock.at = Date.now(); s.clock.run = true; if (s.status === 'prep') s.status = 'live'; } save(); render(); break;
+    case 'adj': { const r = Math.max(0, remain(s)); s.clock.rem = Math.min(pDur(s, s.period) || 3600, Math.max(0, r + +d.v)); if (s.clock.run) s.clock.at = Date.now(); save(); tick(); } break;
+    case 'per': { const np = s.period + +d.v; if (np < 1) return; const doIt = () => { s.period = np; s.clock = { rem: pDur(s, np), run: false, at: 0 }; save(); render(); toast(periodName(s, np)); };
+      if (np > s.cfg.periods && d.v === '1') ask(`Passer en prolongation (${s.cfg.ot || s.cfg.dur} min) ?`, 'Oui', doIt); else doIt(); } break;
+    case 'pick': openPicker(d.t, d.k); break;
+    case 'rec': record(d.t, d.k, d.n ?? ''); break;
+    case 'recn': { const n = $('#pkn').value.trim(); if (!n) return $('#pkn').focus(); record(d.t, d.k, n); } break;
+    case 'dele': ask('Supprimer cette action du journal ?', 'Supprimer', () => { s.events = s.events.filter(x => x.id !== d.id); save(); render(); }); break;
+    case 'undo': { const l = s.events.at(-1); if (!l) return; s.events.pop(); save(); render(); toast('Annulé : ' + actOf(s, l.k)[1] + ' ' + teamLabel(s, l.team)); } break;
+    case 'tab': tab = d.v; render(); break;
+    case 'swap': swap = !swap; render(); break;
+    case 'party': party = +d.i; render(); break;
+    case 'pt': point(d.w); break;
+    case 'undopt': { const p = s.parties[party]; if (p.forfeit) p.forfeit = ''; else p.h.pop(); save(); render(); } break;
+    case 'first': s.parties[party].first = d.v; save(); render(); break;
+    case 'ff': { const p = s.parties[party]; if (p.forfeit) { p.forfeit = ''; save(); render(); break; }
+      ov(`<h3>Forfait ou abandon — ${esc(p.lab)}</h3><p class="small muted">Qui abandonne ?</p><div class="row"><button data-act="doff" data-v="A">${esc(p.a || teamLabel(s, 'A'))}</button><button data-act="doff" data-v="B">${esc(p.b || teamLabel(s, 'B'))}</button><button data-act="close">Annuler</button></div>`); } break;
+    case 'doff': s.parties[party].forfeit = d.v; save(); ov(''); render(); break;
+    case 'clrsig': delete s.sig[d.k]; save(); render(); break;
+    case 'close-sheet': { const miss = SIGS.filter(([k]) => !s.sig[k]).length; const go2 = () => { if (s.clock.run) { s.clock.rem = Math.max(0, remain(s)); s.clock.run = false; } s.status = 'clos'; s.closedAt = Date.now(); save(); render(); toast('Feuille clôturée. Envoie-la à ton professeur.'); };
+      ask(miss ? `${miss} signature(s) manquante(s). Clôturer quand même ?` : 'Clôturer la feuille ? Elle ne sera plus modifiable.', 'Clôturer', go2); } break;
+    case 'reopen': ask('Rouvrir la feuille pour la corriger ?', 'Rouvrir', () => { s.status = 'live'; s.closedAt = null; save(); render(); }); break;
+    case 'dl': { const r = await saveFile(fileName(s, 'json'), JSON.stringify({ ...s, exportedAt: Date.now(), app: 'TablMarkUNSS-eleve' })); toast(r === 'ok' ? 'Fichier prêt : dépose-le dans l’espace de ton professeur.' : r === 'declined' ? 'Téléchargement annulé.' : 'Téléchargement impossible ici : utilise « Copier le code ».', r !== 'ok'); } break;
+    case 'copy': toast(await copyText(toCode(s)) ? 'Code copié : colle-le dans un message à ton professeur.' : 'Copie impossible : ouvre « Afficher le code » et sélectionne-le.', false); break;
+    case 'dlhtml': { const r = await saveFile(fileName(s, 'html'), standaloneSheet(s)); if (r !== 'ok') toast('Téléchargement impossible ici.', true); } break;
+    case 'print': $('#print').innerHTML = sheetHTML(s); try { window.print(); } catch (x) { toast('Impression indisponible ici : utilise « Feuille imprimable ».', true); } break;
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') ov(''); if (e.key === 'Enter' && e.target.id === 'pkn') document.querySelector('[data-act=recn]')?.click(); });
+if (DB.cur && DB.sheets[DB.cur] && DB.sheets[DB.cur].status === 'live') view = 'live';
+render();
+}
+</script>
+</body>
+</html>

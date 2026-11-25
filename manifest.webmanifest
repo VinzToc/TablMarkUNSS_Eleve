@@ -1,0 +1,26 @@
+{
+  "name": "TablMarkUNSS Élève",
+  "short_name": "TablMark Élève",
+  "description": "Table de marque UNSS : saisie en direct des feuilles de match par les jeunes officiels.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eef0ec",
+  "theme_color": "#121418",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
