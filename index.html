@@ -420,6 +420,7 @@ function validSheet(o) {
 }
 function store(key, val) { try { if (val === undefined) return JSON.parse(localStorage.getItem(key) || 'null'); localStorage.setItem(key, JSON.stringify(val)); return true; } catch (e) { return val === undefined ? null : false; } }
 
+
 /* ===== Exports PDF et Excel de la feuille de match (sans bibliothèque, hors ligne) ===== */
 const coachPlain = (s, t) => { const o = (s.officiels || {})[COACH[t]] || {}; return o.nom ? [o.nom, o.lic && 'lic. ' + o.lic, o.njo && 'JO ' + o.njo, o.niv].filter(Boolean).join(' · ') : '—'; };
 /* Modèle commun aux deux exports */
